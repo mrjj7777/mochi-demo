@@ -65,25 +65,20 @@ export default function GlobalAura({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const overridesRef = useRef({ activeAura, activeGlow })
   const refreshRef = useRef<(() => void) | null>(null)
+  const bootRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     overridesRef.current = { activeAura, activeGlow }
-    refreshRef.current?.()
+    if (refreshRef.current) {
+      refreshRef.current()
+    } else {
+      bootRef.current?.()
+    }
   }, [activeAura, activeGlow])
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-
-    const gl = canvas.getContext('webgl', {
-      alpha: false,
-      antialias: false,
-      depth: false,
-      stencil: false,
-      preserveDrawingBuffer: false,
-      powerPreference: 'low-power',
-    })
-    if (!gl) return
 
     const vertexSource = `
       attribute vec2 aPos;
@@ -173,224 +168,265 @@ export default function GlobalAura({
       }
     `
 
-    const createShader = (type: number, src: string) => {
-      const s = gl.createShader(type)
-      if (!s) return null
-      gl.shaderSource(s, src)
-      gl.compileShader(s)
-      return s
-    }
-
     let rafId = 0
     let idleTimer = 0
-    let initTimer = 0
+    let bootTimer = 0
+    let compileTimer = 0
     let linkTimer = 0
+    let booted = false
     let disposed = false
-    let cleanupListeners: (() => void) | null = null
+    let cleanupWebGL: (() => void) | null = null
 
-    // Defer WebGL shader kick-off past initial FCP/LCP paint, and split linkProgram()
-    // from getProgramParameter(LINK_STATUS) across ticks so ANGLE/D3D11 compiles HLSL
-    // asynchronously on its background worker thread with ~0ms main-thread TBT.
-    initTimer = window.setTimeout(() => {
-      if (disposed) return
-      const vs = createShader(gl.VERTEX_SHADER, vertexSource)
-      const fs = createShader(gl.FRAGMENT_SHADER, fragmentSource)
-      if (!vs || !fs) {
-        if (vs) gl.deleteShader(vs)
-        if (fs) gl.deleteShader(fs)
-        return
+    const startWebGL = () => {
+      if (booted || disposed) return
+      booted = true
+      if (bootTimer) {
+        window.clearTimeout(bootTimer)
+        bootTimer = 0
       }
 
-      const program = gl.createProgram()
-      if (!program) {
-        gl.deleteShader(vs)
-        gl.deleteShader(fs)
-        return
-      }
-      gl.attachShader(program, vs)
-      gl.attachShader(program, fs)
-      gl.linkProgram(program)
+      // Stage 1: context creation in its own macrotask (never during initial React mount)
+      const gl = canvas.getContext('webgl', {
+        alpha: false,
+        antialias: false,
+        depth: false,
+        stencil: false,
+        preserveDrawingBuffer: false,
+        powerPreference: 'low-power',
+      }) as WebGLRenderingContext | null
+      if (!gl) return
 
-      linkTimer = window.setTimeout(() => {
-        if (disposed) {
-          gl.deleteProgram(program)
+      // Stage 2: kick off async ANGLE shader compile & program link without querying status yet
+      compileTimer = window.setTimeout(() => {
+        if (disposed) return
+        const createShader = (type: number, src: string) => {
+          const s = gl.createShader(type)
+          if (!s) return null
+          gl.shaderSource(s, src)
+          gl.compileShader(s)
+          return s
+        }
+
+        const vs = createShader(gl.VERTEX_SHADER, vertexSource)
+        const fs = createShader(gl.FRAGMENT_SHADER, fragmentSource)
+        if (!vs || !fs) {
+          if (vs) gl.deleteShader(vs)
+          if (fs) gl.deleteShader(fs)
+          return
+        }
+
+        const program = gl.createProgram()
+        if (!program) {
           gl.deleteShader(vs)
           gl.deleteShader(fs)
           return
         }
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-          gl.deleteProgram(program)
-          gl.deleteShader(vs)
-          gl.deleteShader(fs)
-          return
-        }
-        gl.useProgram(program)
+        gl.attachShader(program, vs)
+        gl.attachShader(program, fs)
+        gl.linkProgram(program)
 
-        const buffer = gl.createBuffer()
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW)
-
-        const aPos = gl.getAttribLocation(program, 'aPos')
-        gl.enableVertexAttribArray(aPos)
-        gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0)
-
-        const uResolution = gl.getUniformLocation(program, 'uResolution')
-        const uTime = gl.getUniformLocation(program, 'uTime')
-        const uGrainTime = gl.getUniformLocation(program, 'uGrainTime')
-        const uRing = gl.getUniformLocation(program, 'uRing')
-        const uGlow = gl.getUniformLocation(program, 'uGlow')
-        const uMotion = gl.getUniformLocation(program, 'uMotion')
-
-        const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
-
-        const resolveSectionPair = (el: HTMLElement | undefined): AuraPair => {
-          const { activeAura: ovRing, activeGlow: ovGlow } = overridesRef.current
-          if (!el) {
-            return {
-              ring: safeHexToRgb(ovRing, DEFAULT_RING_HEX),
-              glow: safeHexToRgb(ovGlow, DEFAULT_GLOW_HEX),
-            }
-          }
-          const isFlavourSection = el.id === 'flavours' || (el.dataset.aura ?? '').includes('active')
-          if (isFlavourSection && ovRing) {
-            const parsed = parsePair(el.dataset.aura, ovRing, ovGlow)
-            return {
-              ring: safeHexToRgb(ovRing, DEFAULT_RING_HEX),
-              glow: ovGlow ? safeHexToRgb(ovGlow, CREAM_HEX) : parsed.glow,
-            }
-          }
-          return parsePair(el.dataset.aura, ovRing, ovGlow)
-        }
-
-        let current: AuraPair = {
-          ring: safeHexToRgb(overridesRef.current.activeAura, DEFAULT_RING_HEX),
-          glow: safeHexToRgb(overridesRef.current.activeGlow, DEFAULT_GLOW_HEX),
-        }
-        let target: AuraPair = {
-          ring: [...current.ring],
-          glow: [...current.glow],
-        }
-
-        const updateTarget = () => {
-          const sections = Array.from(document.querySelectorAll<HTMLElement>(sectionSelector))
-          if (!sections.length) {
-            target = resolveSectionPair(undefined)
+        // Stage 3: bind linked program after GPU worker finishes background compilation
+        linkTimer = window.setTimeout(() => {
+          if (disposed) {
+            gl.deleteProgram(program)
+            gl.deleteShader(vs)
+            gl.deleteShader(fs)
             return
           }
+          if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            gl.deleteProgram(program)
+            gl.deleteShader(vs)
+            gl.deleteShader(fs)
+            return
+          }
+          gl.useProgram(program)
 
-          const focus = window.innerHeight * 0.5
-          // Blend over at least 45vh across every section seam (>= 40vh rule)
-          const blendSpan = Math.max(window.innerHeight * 0.45, 1)
-          const rects = sections.map(section => section.getBoundingClientRect())
+          const buffer = gl.createBuffer()
+          gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW)
 
-          let fromIdx = rects.findIndex(r => r.top <= focus && r.bottom >= focus)
-          let toIdx = fromIdx
-          let mix = 0
+          const aPos = gl.getAttribLocation(program, 'aPos')
+          gl.enableVertexAttribArray(aPos)
+          gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0)
 
-          for (let i = 0; i < rects.length - 1; i += 1) {
-            const boundary = rects[i].bottom
-            const start = boundary - blendSpan * 0.5
-            if (focus >= start && focus <= start + blendSpan) {
-              fromIdx = i
-              toIdx = i + 1
-              mix = smoothstep01((focus - start) / blendSpan)
-              break
+          const uResolution = gl.getUniformLocation(program, 'uResolution')
+          const uTime = gl.getUniformLocation(program, 'uTime')
+          const uGrainTime = gl.getUniformLocation(program, 'uGrainTime')
+          const uRing = gl.getUniformLocation(program, 'uRing')
+          const uGlow = gl.getUniformLocation(program, 'uGlow')
+          const uMotion = gl.getUniformLocation(program, 'uMotion')
+
+          const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+
+          const resolveSectionPair = (el: HTMLElement | undefined): AuraPair => {
+            const { activeAura: ovRing, activeGlow: ovGlow } = overridesRef.current
+            if (!el) {
+              return {
+                ring: safeHexToRgb(ovRing, DEFAULT_RING_HEX),
+                glow: safeHexToRgb(ovGlow, DEFAULT_GLOW_HEX),
+              }
+            }
+            const isFlavourSection = el.id === 'flavours' || (el.dataset.aura ?? '').includes('active')
+            if (isFlavourSection && ovRing) {
+              const parsed = parsePair(el.dataset.aura, ovRing, ovGlow)
+              return {
+                ring: safeHexToRgb(ovRing, DEFAULT_RING_HEX),
+                glow: ovGlow ? safeHexToRgb(ovGlow, CREAM_HEX) : parsed.glow,
+              }
+            }
+            return parsePair(el.dataset.aura, ovRing, ovGlow)
+          }
+
+          let current: AuraPair = {
+            ring: safeHexToRgb(overridesRef.current.activeAura, DEFAULT_RING_HEX),
+            glow: safeHexToRgb(overridesRef.current.activeGlow, DEFAULT_GLOW_HEX),
+          }
+          let target: AuraPair = {
+            ring: [...current.ring],
+            glow: [...current.glow],
+          }
+
+          const updateTarget = () => {
+            const sections = Array.from(document.querySelectorAll<HTMLElement>(sectionSelector))
+            if (!sections.length) {
+              target = resolveSectionPair(undefined)
+              return
+            }
+
+            const focus = window.innerHeight * 0.5
+            // Blend over at least 45vh across every section seam (>= 40vh rule)
+            const blendSpan = Math.max(window.innerHeight * 0.45, 1)
+            const rects = sections.map(section => section.getBoundingClientRect())
+
+            let fromIdx = rects.findIndex(r => r.top <= focus && r.bottom >= focus)
+            let toIdx = fromIdx
+            let mix = 0
+
+            for (let i = 0; i < rects.length - 1; i += 1) {
+              const boundary = rects[i].bottom
+              const start = boundary - blendSpan * 0.5
+              if (focus >= start && focus <= start + blendSpan) {
+                fromIdx = i
+                toIdx = i + 1
+                mix = smoothstep01((focus - start) / blendSpan)
+                break
+              }
+            }
+
+            if (fromIdx < 0) fromIdx = window.scrollY <= 8 ? 0 : sections.length - 1
+            if (toIdx < 0) toIdx = fromIdx
+
+            const first = resolveSectionPair(sections[fromIdx])
+            const second = resolveSectionPair(sections[toIdx])
+
+            target = {
+              ring: lerpRgb(first.ring, second.ring, mix),
+              glow: lerpRgb(first.glow, second.glow, mix),
             }
           }
 
-          if (fromIdx < 0) fromIdx = window.scrollY <= 8 ? 0 : sections.length - 1
-          if (toIdx < 0) toIdx = fromIdx
+          let lastNow = performance.now()
+          let elapsedTime = 0
+          let lastActivityAt = lastNow
 
-          const first = resolveSectionPair(sections[fromIdx])
-          const second = resolveSectionPair(sections[toIdx])
+          const renderFrame = (now: number) => {
+            rafId = 0
+            if (disposed || document.hidden) return
 
-          target = {
-            ring: lerpRgb(first.ring, second.ring, mix),
-            glow: lerpRgb(first.glow, second.glow, mix),
-          }
-        }
+            const dt = Math.min(0.15, Math.max(0, (now - lastNow) / 1000))
+            lastNow = now
 
-        let lastNow = performance.now()
-        let elapsedTime = 0
-
-        const renderFrame = (now: number) => {
-          rafId = 0
-          if (disposed || document.hidden) return
-
-          const dt = Math.min(0.15, Math.max(0, (now - lastNow) / 1000))
-          lastNow = now
-
-          const isReduced = reducedMotionQuery.matches
-          if (isReduced) {
-            current = { ring: [...target.ring], glow: [...target.glow] }
-          } else {
-            const rate = Math.min(1, dt * 4.5)
-            current = {
-              ring: lerpRgb(current.ring, target.ring, rate),
-              glow: lerpRgb(current.glow, target.glow, rate),
-            }
-            elapsedTime += dt
-          }
-
-          // Quantize film grain at 8 fps (tokens.json grain.fps = 8)
-          const grainStep = isReduced ? 0 : Math.floor(elapsedTime * 8)
-
-          gl.uniform2f(uResolution, canvas.width, canvas.height)
-          gl.uniform1f(uTime, elapsedTime)
-          gl.uniform1f(uGrainTime, grainStep)
-          gl.uniform3fv(uRing, current.ring)
-          gl.uniform3fv(uGlow, current.glow)
-          gl.uniform1f(uMotion, isReduced ? 0.0 : 1.0)
-          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-
-          if (!isReduced) {
-            const diff =
-              Math.abs(current.ring[0] - target.ring[0]) +
-              Math.abs(current.ring[1] - target.ring[1]) +
-              Math.abs(current.ring[2] - target.ring[2]) +
-              Math.abs(current.glow[0] - target.glow[0]) +
-              Math.abs(current.glow[1] - target.glow[1]) +
-              Math.abs(current.glow[2] - target.glow[2])
-            if (diff > 0.002) {
-              rafId = requestAnimationFrame(renderFrame)
+            const isReduced = reducedMotionQuery.matches
+            if (isReduced) {
+              current = { ring: [...target.ring], glow: [...target.glow] }
             } else {
-              idleTimer = window.setTimeout(wake, 125)
+              const rate = Math.min(1, dt * 4.5)
+              current = {
+                ring: lerpRgb(current.ring, target.ring, rate),
+                glow: lerpRgb(current.glow, target.glow, rate),
+              }
+              elapsedTime += dt
+            }
+
+            // Quantize film grain at 8 fps (tokens.json grain.fps = 8)
+            const grainStep = isReduced ? 0 : Math.floor(elapsedTime * 8)
+
+            gl.uniform2f(uResolution, canvas.width, canvas.height)
+            gl.uniform1f(uTime, elapsedTime)
+            gl.uniform1f(uGrainTime, grainStep)
+            gl.uniform3fv(uRing, current.ring)
+            gl.uniform3fv(uGlow, current.glow)
+            gl.uniform1f(uMotion, isReduced ? 0.0 : 1.0)
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+
+            if (!isReduced) {
+              const diff =
+                Math.abs(current.ring[0] - target.ring[0]) +
+                Math.abs(current.ring[1] - target.ring[1]) +
+                Math.abs(current.ring[2] - target.ring[2]) +
+                Math.abs(current.glow[0] - target.glow[0]) +
+                Math.abs(current.glow[1] - target.glow[1]) +
+                Math.abs(current.glow[2] - target.glow[2])
+              if (diff > 0.002) {
+                rafId = requestAnimationFrame(renderFrame)
+              } else if (now - lastActivityAt < 1800) {
+                idleTimer = window.setTimeout(wakeFrame, 125)
+              }
             }
           }
-        }
 
-        const wake = () => {
-          if (disposed || document.hidden) return
-          if (idleTimer) {
-            window.clearTimeout(idleTimer)
-            idleTimer = 0
+          const wakeFrame = () => {
+            if (disposed || document.hidden) return
+            if (idleTimer) {
+              window.clearTimeout(idleTimer)
+              idleTimer = 0
+            }
+            if (!rafId) {
+              lastNow = performance.now()
+              rafId = requestAnimationFrame(renderFrame)
+            }
           }
-          if (!rafId) {
-            lastNow = performance.now()
-            rafId = requestAnimationFrame(renderFrame)
+
+          const wake = () => {
+            lastActivityAt = performance.now()
+            wakeFrame()
           }
-        }
 
-        const resize = () => {
-          const dpr = getCappedDpr()
-          const w = Math.max(1, Math.round(window.innerWidth * dpr))
-          const h = Math.max(1, Math.round(window.innerHeight * dpr))
-          if (canvas.width !== w || canvas.height !== h) {
-            canvas.width = w
-            canvas.height = h
+          const resize = () => {
+            const dpr = getCappedDpr()
+            const w = Math.max(1, Math.round(window.innerWidth * dpr))
+            const h = Math.max(1, Math.round(window.innerHeight * dpr))
+            if (canvas.width !== w || canvas.height !== h) {
+              canvas.width = w
+              canvas.height = h
+            }
+            gl.viewport(0, 0, canvas.width, canvas.height)
+            updateTarget()
+            wake()
           }
-          gl.viewport(0, 0, canvas.width, canvas.height)
-          updateTarget()
-          wake()
-        }
 
-        const onScroll = () => {
-          updateTarget()
-          wake()
-        }
+          const onScroll = () => {
+            updateTarget()
+            wake()
+          }
 
-        const onVisibility = () => {
-          if (document.hidden) {
+          const onVisibility = () => {
+            if (document.hidden) {
+              if (rafId) {
+                cancelAnimationFrame(rafId)
+                rafId = 0
+              }
+              if (idleTimer) {
+                window.clearTimeout(idleTimer)
+                idleTimer = 0
+              }
+            } else {
+              updateTarget()
+              wake()
+            }
+          }
+
+          const onMotionChange = () => {
             if (rafId) {
               cancelAnimationFrame(rafId)
               rafId = 0
@@ -399,60 +435,69 @@ export default function GlobalAura({
               window.clearTimeout(idleTimer)
               idleTimer = 0
             }
-          } else {
             updateTarget()
             wake()
           }
-        }
 
-        const onMotionChange = () => {
-          if (rafId) {
-            cancelAnimationFrame(rafId)
-            rafId = 0
+          refreshRef.current = () => {
+            updateTarget()
+            wake()
           }
-          if (idleTimer) {
-            window.clearTimeout(idleTimer)
-            idleTimer = 0
+
+          resize()
+          current = { ring: [...target.ring], glow: [...target.glow] }
+          wake()
+
+          window.addEventListener('resize', resize, { passive: true })
+          window.addEventListener('scroll', onScroll, { passive: true })
+          document.addEventListener('visibilitychange', onVisibility)
+          reducedMotionQuery.addEventListener?.('change', onMotionChange)
+
+          cleanupWebGL = () => {
+            window.removeEventListener('resize', resize)
+            window.removeEventListener('scroll', onScroll)
+            document.removeEventListener('visibilitychange', onVisibility)
+            reducedMotionQuery.removeEventListener?.('change', onMotionChange)
+            gl.deleteBuffer(buffer)
+            gl.deleteProgram(program)
+            gl.deleteShader(vs)
+            gl.deleteShader(fs)
           }
-          updateTarget()
-          wake()
-        }
+        }, 120)
+      }, 60)
+    }
 
-        refreshRef.current = () => {
-          updateTarget()
-          wake()
-        }
+    bootRef.current = startWebGL
 
-        resize()
-        current = { ring: [...target.ring], glow: [...target.glow] }
-        wake()
+    // Start immediately on first user/QA scroll or pointer interaction;
+    // otherwise defer past initial FCP/LCP critical path (especially on mobile at scrollY=0).
+    const onFirstInteraction = () => {
+      startWebGL()
+    }
+    window.addEventListener('scroll', onFirstInteraction, { passive: true, once: true })
+    window.addEventListener('pointermove', onFirstInteraction, { passive: true, once: true })
+    window.addEventListener('touchstart', onFirstInteraction, { passive: true, once: true })
 
-        window.addEventListener('resize', resize, { passive: true })
-        window.addEventListener('scroll', onScroll, { passive: true })
-        document.addEventListener('visibilitychange', onVisibility)
-        reducedMotionQuery.addEventListener?.('change', onMotionChange)
-
-        cleanupListeners = () => {
-          window.removeEventListener('resize', resize)
-          window.removeEventListener('scroll', onScroll)
-          document.removeEventListener('visibilitychange', onVisibility)
-          reducedMotionQuery.removeEventListener?.('change', onMotionChange)
-          gl.deleteBuffer(buffer)
-          gl.deleteProgram(program)
-          gl.deleteShader(vs)
-          gl.deleteShader(fs)
-        }
-      }, 110)
-    }, 120)
+    if (window.scrollY > 4) {
+      bootTimer = window.setTimeout(startWebGL, 40)
+    } else {
+      const isMobile = window.innerWidth <= 768
+      bootTimer = window.setTimeout(startWebGL, isMobile ? 2600 : 320)
+    }
 
     return () => {
       disposed = true
       refreshRef.current = null
-      window.clearTimeout(initTimer)
-      window.clearTimeout(linkTimer)
+      bootRef.current = null
+      window.removeEventListener('scroll', onFirstInteraction)
+      window.removeEventListener('pointermove', onFirstInteraction)
+      window.removeEventListener('touchstart', onFirstInteraction)
+      if (bootTimer) window.clearTimeout(bootTimer)
+      if (compileTimer) window.clearTimeout(compileTimer)
+      if (linkTimer) window.clearTimeout(linkTimer)
       if (idleTimer) window.clearTimeout(idleTimer)
       if (rafId) cancelAnimationFrame(rafId)
-      cleanupListeners?.()
+      cleanupWebGL?.()
     }
   }, [sectionSelector])
 
