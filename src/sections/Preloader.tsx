@@ -6,15 +6,12 @@ export type PreloaderProps = {
   done?: boolean
 }
 
-const PRELOAD_IMAGES = [
-  '/media/hero-seq/poster.webp',
-  '/media/cutouts/mochi-cherry.webp',
-]
+const HERO_POSTER = '/media/hero-seq/poster.webp'
 
 /**
  * Wordmark fills horizontally with Cherry jelly red (#B3122E) from 000 to 100
- * driven by real font + poster + cutout readiness, squeezes once, then wipes up
- * cleanly within <= 1.6s.
+ * driven by font + hero poster readiness, squeezes once, then wipes up swiftly
+ * (~550–750ms) so LCP hero poster paints unblocked.
  */
 export default function Preloader({ onDone, done = false }: PreloaderProps) {
   const rootRef = useRef<HTMLDivElement>(null)
@@ -37,14 +34,14 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
       return
     }
 
-    let targetProgress = 0.08
+    let targetProgress = 0.2
     let assetsCompleted = false
     let phase: 'loading' | 'squeeze' | 'wipe' | 'done' = 'loading'
     let squeezeStarted = 0
 
-    const progressSpring = createSpring('ui', 0)
+    const progressSpring = createSpring({ stiffness: 520, damping: 42, mass: 1 }, 0.15)
     const squeezeSpring = createSpring('jelly', 1)
-    const wipeSpring = createSpring('settle', 0)
+    const wipeSpring = createSpring('ui', 0)
 
     const markTask = (weight: number) => {
       targetProgress = clamp(targetProgress + weight, 0, 1)
@@ -53,25 +50,23 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
 
     // Track real document.fonts readiness
     if (document.fonts?.ready) {
-      document.fonts.ready.then(() => markTask(0.32)).catch(() => markTask(0.32))
+      document.fonts.ready.then(() => markTask(0.4)).catch(() => markTask(0.4))
     } else {
-      markTask(0.32)
+      markTask(0.4)
     }
 
-    // Track poster + primary cherry cutout
-    PRELOAD_IMAGES.forEach(src => {
-      const img = new Image()
-      const settle = () => markTask(0.3)
-      img.onload = settle
-      img.onerror = settle
-      img.src = src
-    })
+    // Track hero poster readiness (preloaded in index.html)
+    const posterImg = new Image()
+    const settlePoster = () => markTask(0.4)
+    posterImg.onload = settlePoster
+    posterImg.onerror = settlePoster
+    posterImg.src = HERO_POSTER
 
-    // Safety cap so preloader always completes and wipes up in <= 1.6s
+    // Swift cap so preloader fills, squeezes, and wipes cleanly within ~550–750ms
     const forceReadyTimer = window.setTimeout(() => {
       targetProgress = 1
       assetsCompleted = true
-    }, 820)
+    }, 340)
 
     const hardFinishTimer = window.setTimeout(() => {
       if (!finishedRef.current) {
@@ -79,7 +74,7 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
         setDismissed(true)
         onDone()
       }
-    }, 1520)
+    }, 760)
 
     let raf = 0
     let last = performance.now()
@@ -90,8 +85,7 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
       last = now
 
       if (phase === 'loading') {
-        // Creep smoothly toward targetProgress so progress never stalls visibly
-        const effectiveTarget = assetsCompleted ? 1 : Math.min(0.92, targetProgress + 0.14)
+        const effectiveTarget = assetsCompleted ? 1 : Math.min(0.92, targetProgress + 0.18)
         progressSpring.setTarget(effectiveTarget)
         const val = clamp(progressSpring.step(dt), 0, 1)
         const nextCount = Math.round(val * 100)
@@ -102,7 +96,7 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
         if (fillRef.current) {
           fillRef.current.style.clipPath = `inset(0 ${(100 - val * 100).toFixed(2)}% 0 0)`
         }
-        if (assetsCompleted && val >= 0.975) {
+        if (assetsCompleted && val >= 0.96) {
           setCount(100)
           if (fillRef.current) fillRef.current.style.clipPath = 'inset(0 0% 0 0)'
           phase = 'squeeze'
@@ -116,8 +110,9 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
         if (wordRef.current) {
           wordRef.current.style.transform = `scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`
         }
-        if (now - squeezeStarted > 260 || squeezeSpring.atRest(0.015)) {
+        if (now - squeezeStarted > 140 || squeezeSpring.atRest(0.025)) {
           phase = 'wipe'
+          if (rootRef.current) rootRef.current.style.pointerEvents = 'none'
           wipeSpring.setTarget(-102)
         }
       } else if (phase === 'wipe') {
@@ -125,7 +120,7 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
         if (rootRef.current) {
           rootRef.current.style.transform = `translate3d(0, ${yPct.toFixed(2)}%, 0)`
         }
-        if (yPct <= -99.5 || wipeSpring.atRest(0.3)) {
+        if (yPct <= -98.5 || wipeSpring.atRest(0.5)) {
           phase = 'done'
           if (!finishedRef.current) {
             finishedRef.current = true

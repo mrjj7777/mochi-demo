@@ -4,8 +4,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
 import { flavours } from './brand'
 import { FlavourContext } from './context/FlavourContext'
-import BeliefSection from './physics/BeliefSection'
-import FooterSection from './physics/FooterSection'
 import { clamp, publishScrollVelocity } from './physics/spring'
 import AllSixSection from './sections/AllSixSection'
 import Cursor from './sections/Cursor'
@@ -24,6 +22,8 @@ import type { DeviceTier, Flavour } from './types/mochi'
 import GlobalAura from './webgl/GlobalAura'
 
 const MochiTube3D = lazy(() => import('./webgl/MochiTube3D'))
+const BeliefSection = lazy(() => import('./physics/BeliefSection'))
+const FooterSection = lazy(() => import('./physics/FooterSection'))
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -254,7 +254,13 @@ export default function App() {
         <Header bag={bag} onJump={jump} />
         <main>
           <HeroWave onJump={jump} reduced={reduced} />
-          <BeliefSection reduced={reduced} />
+          <Suspense
+            fallback={
+              <section id="belief" className="belief section" data-aura="#2FA4A8,#E46A8E" style={{ minHeight: '150vh' }} />
+            }
+          >
+            <BeliefSection reduced={reduced} />
+          </Suspense>
           <SqueezeSection reduced={reduced} tier={tier} />
           <FlavoursSection reduced={reduced} tier={tier} bag={bag} onAdd={handleAdd} />
           <TextureSection reduced={reduced} tier={tier} onLoupeHover={setLoupeSuppressed} />
@@ -266,7 +272,13 @@ export default function App() {
           <AllSixSection reduced={reduced} tier={tier} />
           <WallpapersSection reduced={reduced} tier={tier} onOpen={setWallpaperIndex} />
         </main>
-        <FooterSection reduced={reduced} />
+        <Suspense
+          fallback={
+            <footer id="footer" className="footer section" data-aura="#2346B8,#B3122E" style={{ minHeight: '60vh' }} />
+          }
+        >
+          <FooterSection reduced={reduced} />
+        </Suspense>
         {reduced && <p className="reduced-note micro">motion reduced.</p>}
         <Cursor suppressed={loupeSuppressed} />
       </div>

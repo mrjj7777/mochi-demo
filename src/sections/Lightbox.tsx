@@ -58,7 +58,9 @@ export default function Lightbox({ data, onClose }: LightboxProps) {
 
       <figure className="lightbox__figure" onClick={e => e.stopPropagation()}>
         <picture>
-          {meta.avif && <source srcSet={meta.avif} type="image/avif" />}
+          {data.src.endsWith('.webp') && (
+            <source srcSet={data.src.replace(/\.webp$/, '.avif')} type="image/avif" />
+          )}
           <img
             src={data.src}
             width={meta.width}

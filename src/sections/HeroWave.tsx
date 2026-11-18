@@ -215,24 +215,53 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
       img.src = `${dir}/${String(index + 1).padStart(4, '0')}.webp`
     }
 
-    // 1. Frame 0 immediately
+    // 1. Frame 0 only at boot so Slow 4G mobile LCP is never saturated
     loadFrame(0)
-    // 2. Every 8th frame next
-    for (let i = 8; i < count; i += 8) loadFrame(i)
-    // 3. Fill remaining frames staggered smoothly in background
+
     const restTimers: number[] = []
-    let delay = 24
-    for (let i = 1; i < count; i += 1) {
-      if (i % 8 === 0) continue
-      const idx = i
-      const t = window.setTimeout(() => loadFrame(idx), delay)
-      restTimers.push(t)
-      delay += 14
+    let sequenceStarted = false
+    let deferredSeqTimer = 0
+
+    const startSequence = () => {
+      if (disposed || sequenceStarted) return
+      sequenceStarted = true
+      window.clearTimeout(deferredSeqTimer)
+      window.removeEventListener('scroll', startSequence)
+      window.removeEventListener('wheel', startSequence)
+      window.removeEventListener('touchstart', startSequence)
+      window.removeEventListener('pointerdown', startSequence)
+      window.removeEventListener('pointermove', startSequence)
+      window.removeEventListener('keydown', startSequence)
+
+      for (let i = 8; i < count; i += 8) loadFrame(i)
+      let delay = 20
+      for (let i = 1; i < count; i += 1) {
+        if (i % 8 === 0) continue
+        const idx = i
+        const t = window.setTimeout(() => loadFrame(idx), delay)
+        restTimers.push(t)
+        delay += 12
+      }
     }
 
-    // Idle nudge: after 2.5s at progress 0, squish 1 -> 18 -> 1 over 1.4s, max once per 8s, stops on scroll
+    window.addEventListener('scroll', startSequence, { once: true, passive: true })
+    window.addEventListener('wheel', startSequence, { once: true, passive: true })
+    window.addEventListener('touchstart', startSequence, { once: true, passive: true })
+    window.addEventListener('pointerdown', startSequence, { once: true, passive: true })
+    window.addEventListener('pointermove', startSequence, { once: true, passive: true })
+    window.addEventListener('keydown', startSequence, { once: true, passive: true })
+
+    const scheduleDeferred = () => {
+      if (disposed || sequenceStarted) return
+      deferredSeqTimer = window.setTimeout(startSequence, isMobile ? 6200 : 2400)
+    }
+    if (document.readyState === 'complete') scheduleDeferred()
+    else window.addEventListener('load', scheduleDeferred, { once: true })
+
+    // Idle nudge: after 2.5s on desktop (after deferred load on mobile), squish 1 -> 18 -> 1 over 1.4s
     const runNudge = () => {
       if (disposed || hasScrolledRef.current || progressRef.current >= 0.02) return
+      startSequence()
       const start = performance.now()
       const duration = 1400
       const maxNudgeFrame = isMobile ? 9 : 17
@@ -254,7 +283,7 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
       nudgeRaf = requestAnimationFrame(animateNudge)
     }
 
-    nudgeTimer = window.setTimeout(runNudge, 2500)
+    nudgeTimer = window.setTimeout(runNudge, isMobile ? 6800 : 2500)
 
     let last = performance.now()
     const tick = (now: number) => {
@@ -283,6 +312,14 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
       cancelAnimationFrame(nudgeRaf)
       window.clearTimeout(nudgeTimer)
       window.clearTimeout(nudgeRepeatTimer)
+      window.clearTimeout(deferredSeqTimer)
+      window.removeEventListener('scroll', startSequence)
+      window.removeEventListener('wheel', startSequence)
+      window.removeEventListener('touchstart', startSequence)
+      window.removeEventListener('pointerdown', startSequence)
+      window.removeEventListener('pointermove', startSequence)
+      window.removeEventListener('keydown', startSequence)
+      window.removeEventListener('load', scheduleDeferred)
       restTimers.forEach(t => window.clearTimeout(t))
       ro.disconnect()
       window.removeEventListener('resize', onResize)

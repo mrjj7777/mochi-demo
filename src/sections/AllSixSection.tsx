@@ -95,7 +95,7 @@ export default function AllSixSection({ reduced, tier }: SharedSectionProps) {
         style={meta.blurDataUrl ? { backgroundImage: `url(${meta.blurDataUrl})` } : undefined}
       >
         <picture>
-          {meta.avif && <source srcSet={meta.avif} type="image/avif" />}
+          <source srcSet={PILE_PHOTO.replace(/\.webp$/, '.avif')} type="image/avif" />
           <img
             className="all-six__image"
             src={PILE_PHOTO}

@@ -5,6 +5,21 @@ export default defineConfig({
   plugins: [react()],
   build: {
     target: 'es2020',
+    modulePreload: {
+      resolveDependencies: (_filename, deps) =>
+        deps.filter(
+          dep =>
+            !dep.includes('vendor-three') &&
+            !dep.includes('vendor-rapier') &&
+            !dep.includes('vendor-kinetic') &&
+            !dep.includes('MochiTube') &&
+            !dep.includes('Scene3D') &&
+            !dep.includes('PilePhysics') &&
+            !dep.includes('RefractiveLoupe') &&
+            !dep.includes('BeliefSection') &&
+            !dep.includes('FooterSection'),
+        ),
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {

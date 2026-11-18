@@ -83,13 +83,14 @@ const LOOKBOOK_FRAMES: LookbookFrame[] = [
 
 function LookbookImage({ src, alt, eager = false }: { src: string; alt: string; eager?: boolean }) {
   const meta = useMediaMeta(src)
+  const avifSrc = src.endsWith('.webp') ? src.replace(/\.webp$/, '.avif') : undefined
   return (
     <div
       className="lookbook__media mochi-blur-img"
       style={meta.blurDataUrl ? { backgroundImage: `url(${meta.blurDataUrl})` } : undefined}
     >
       <picture>
-        {meta.avif && <source srcSet={meta.avif} type="image/avif" />}
+        {avifSrc && <source srcSet={avifSrc} type="image/avif" />}
         <img
           src={src}
           width={meta.width}
@@ -398,7 +399,7 @@ export default function LookbookSection({ reduced, onOpen }: LookbookSectionProp
                 aria-label={`Open ${frame.caption} lookbook portrait`}
               >
                 <div className="lookbook__photo-box">
-                  <LookbookImage src={frame.src} alt={frame.alt} eager />
+                  <LookbookImage src={frame.src} alt={frame.alt} eager={reduced} />
                   {desktopPinned && (
                     <span
                       ref={el => {

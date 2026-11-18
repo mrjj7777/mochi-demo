@@ -182,7 +182,7 @@ export default function TextureSection({ reduced, tier, onLoupeHover }: TextureS
         }
       >
         <picture>
-          {meta.avif && <source srcSet={meta.avif} type="image/avif" />}
+          <source srcSet={IMAGE_SRC.replace(/\.webp$/, '.avif')} type="image/avif" />
           <img
             src={IMAGE_SRC}
             width={meta.width}
