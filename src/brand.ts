@@ -1,10 +1,17 @@
 import tokenData from '../docs/design/tokens.json'
-import type { Flavour, FlavourKey } from './types/mochi'
 
-export type { Flavour, FlavourKey }
+export type Flavour = {
+  key: string
+  asset: string
+  name: string
+  mood: string
+  jelly: string
+  aura: string
+  index: string
+}
 
 export const flavours: Flavour[] = tokenData.flavours.map(flavour => ({
-  key: flavour.key as FlavourKey,
+  key: flavour.key,
   asset: flavour.key,
   name: flavour.name,
   mood: flavour.mood,
@@ -15,5 +22,3 @@ export const flavours: Flavour[] = tokenData.flavours.map(flavour => ({
 
 export const wallpaperSize = tokenData.wallpapers.size
 export const wallpaperFileSize = wallpaperSize.replace(' × ', 'x')
-
-export const TOKENS = tokenData
