@@ -263,8 +263,8 @@ export default function SqueezeSection({ reduced, tier }: SharedSectionProps) {
                 width={1122}
                 height={1402}
                 alt="Cherry MOCHI lip jelly tube"
-                loading="eager"
-                decoding="sync"
+                loading={reduced ? 'eager' : 'lazy'}
+                decoding={reduced ? 'sync' : 'async'}
               />
             )}
           </div>

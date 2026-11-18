@@ -17,7 +17,7 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
   const rootRef = useRef<HTMLDivElement>(null)
   const wordRef = useRef<HTMLDivElement>(null)
   const fillRef = useRef<HTMLSpanElement>(null)
-  const [count, setCount] = useState(0)
+  const countRef = useRef<HTMLSpanElement>(null)
   const [dismissed, setDismissed] = useState(done)
   const finishedRef = useRef(done)
 
@@ -96,13 +96,15 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
         const nextCount = Math.round(val * 100)
         if (nextCount !== displayed) {
           displayed = nextCount
-          setCount(nextCount)
+          if (countRef.current) {
+            countRef.current.textContent = String(nextCount).padStart(3, '0')
+          }
         }
         if (fillRef.current) {
           fillRef.current.style.clipPath = `inset(0 ${(100 - val * 100).toFixed(2)}% 0 0)`
         }
         if (assetsCompleted && val >= 0.94) {
-          setCount(100)
+          if (countRef.current) countRef.current.textContent = '100'
           if (fillRef.current) fillRef.current.style.clipPath = 'inset(0 0% 0 0)'
           phase = 'squeeze'
           squeezeStarted = now
@@ -169,8 +171,8 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
         <span className="preloader__word preloader__word--base" aria-hidden="true">MOCHI</span>
         <span ref={fillRef} className="preloader__word preloader__word--fill" aria-hidden="true">MOCHI</span>
       </div>
-      <span className="preloader__count micro" aria-live="polite">
-        {String(count).padStart(3, '0')}
+      <span ref={countRef} className="preloader__count micro" aria-live="polite">
+        000
       </span>
     </div>
   )

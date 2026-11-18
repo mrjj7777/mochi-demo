@@ -130,8 +130,31 @@ export default function App() {
     typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false,
   )
   const [tier] = useState<DeviceTier>(() => detectDeviceTier())
+  const [mountKinetic, setMountKinetic] = useState(
+    () => reduced || (typeof window !== 'undefined' && window.scrollY > 4),
+  )
 
   const lenisRef = useRef<Lenis | null>(null)
+
+  useEffect(() => {
+    if (mountKinetic || compareMode) return
+    const enable = () => setMountKinetic(true)
+    window.addEventListener('scroll', enable, { passive: true, once: true })
+    window.addEventListener('wheel', enable, { passive: true, once: true })
+    window.addEventListener('touchstart', enable, { passive: true, once: true })
+    window.addEventListener('pointerdown', enable, { passive: true, once: true })
+    window.addEventListener('keydown', enable, { passive: true, once: true })
+    const isMobile = window.innerWidth <= 768
+    const timer = window.setTimeout(enable, isMobile ? 6200 : 1200)
+    return () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('scroll', enable)
+      window.removeEventListener('wheel', enable)
+      window.removeEventListener('touchstart', enable)
+      window.removeEventListener('pointerdown', enable)
+      window.removeEventListener('keydown', enable)
+    }
+  }, [mountKinetic, compareMode])
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -214,6 +237,12 @@ export default function App() {
     return () => window.clearTimeout(id)
   }, [loaded, compareMode])
 
+  useEffect(() => {
+    if (!mountKinetic || compareMode) return
+    const id = window.setTimeout(() => ScrollTrigger.refresh(), 180)
+    return () => window.clearTimeout(id)
+  }, [mountKinetic, compareMode])
+
   const jump = useCallback(
     (id: string) => {
       const target = document.getElementById(id)
@@ -254,13 +283,17 @@ export default function App() {
         <Header bag={bag} onJump={jump} />
         <main>
           <HeroWave onJump={jump} reduced={reduced} />
-          <Suspense
-            fallback={
-              <section id="belief" className="belief section" data-aura="#2FA4A8,#E46A8E" style={{ minHeight: '150vh' }} />
-            }
-          >
-            <BeliefSection reduced={reduced} />
-          </Suspense>
+          {mountKinetic ? (
+            <Suspense
+              fallback={
+                <section id="belief" className="belief section" data-aura="#2FA4A8,#E46A8E" style={{ minHeight: '150vh' }} />
+              }
+            >
+              <BeliefSection reduced={reduced} />
+            </Suspense>
+          ) : (
+            <section id="belief" className="belief section" data-aura="#2FA4A8,#E46A8E" style={{ minHeight: '150vh' }} />
+          )}
           <SqueezeSection reduced={reduced} tier={tier} />
           <FlavoursSection reduced={reduced} tier={tier} bag={bag} onAdd={handleAdd} />
           <TextureSection reduced={reduced} tier={tier} onLoupeHover={setLoupeSuppressed} />
@@ -272,13 +305,17 @@ export default function App() {
           <AllSixSection reduced={reduced} tier={tier} />
           <WallpapersSection reduced={reduced} tier={tier} onOpen={setWallpaperIndex} />
         </main>
-        <Suspense
-          fallback={
-            <footer id="footer" className="footer section" data-aura="#2346B8,#B3122E" style={{ minHeight: '60vh' }} />
-          }
-        >
-          <FooterSection reduced={reduced} />
-        </Suspense>
+        {mountKinetic ? (
+          <Suspense
+            fallback={
+              <footer id="footer" className="footer section" data-aura="#2346B8,#B3122E" style={{ minHeight: '60vh' }} />
+            }
+          >
+            <FooterSection reduced={reduced} />
+          </Suspense>
+        ) : (
+          <footer id="footer" className="footer section" data-aura="#2346B8,#B3122E" style={{ minHeight: '60vh' }} />
+        )}
         {reduced && <p className="reduced-note micro">motion reduced.</p>}
         <Cursor suppressed={loupeSuppressed} />
       </div>

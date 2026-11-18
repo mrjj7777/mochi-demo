@@ -482,7 +482,7 @@ export default function GlobalAura({
       bootTimer = window.setTimeout(startWebGL, 40)
     } else {
       const isMobile = window.innerWidth <= 768
-      bootTimer = window.setTimeout(startWebGL, isMobile ? 2600 : 320)
+      bootTimer = window.setTimeout(startWebGL, isMobile ? 6500 : 320)
     }
 
     return () => {
