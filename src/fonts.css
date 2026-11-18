@@ -7,19 +7,14 @@
 }
 
 @font-face {
-  font-family: 'Geist Variable';
-  src: url('/fonts/geist-latin-wght-normal.woff2') format('woff2');
-  font-display: swap;
+  font-family: 'Krona One Fallback';
+  src: local('Arial Black'), local('Arial Bold'), local('Helvetica Neue');
+  size-adjust: 132%;
+  ascent-override: 75%;
+  descent-override: 20%;
+  line-gap-override: 0%;
   font-style: normal;
-  font-weight: 100 900;
-}
-
-@font-face {
-  font-family: 'Geist Mono Variable';
-  src: url('/fonts/geist-mono-latin-wght-normal.woff2') format('woff2');
-  font-display: swap;
-  font-style: normal;
-  font-weight: 100 900;
+  font-weight: 400;
 }
 
 @font-face {
@@ -36,4 +31,53 @@
   font-display: swap;
   font-style: italic;
   font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Instrument Serif Fallback';
+  src: local('Georgia Italic'), local('Times New Roman Italic'), local('Georgia');
+  size-adjust: 92%;
+  ascent-override: 96%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+  font-style: italic;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Geist Variable';
+  src: url('/fonts/geist-latin-wght-normal.woff2') format('woff2');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 100 900;
+}
+
+@font-face {
+  font-family: 'Geist Fallback';
+  src: local('Segoe UI'), local('Helvetica Neue'), local('Arial');
+  size-adjust: 102%;
+  ascent-override: 93%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+  font-style: normal;
+  font-weight: 100 900;
+}
+
+@font-face {
+  font-family: 'Geist Mono Variable';
+  src: url('/fonts/geist-mono-latin-wght-normal.woff2') format('woff2');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 100 900;
+}
+
+@font-face {
+  font-family: 'Geist Mono Fallback';
+  src: local('Cascadia Mono'), local('Consolas'), local('Courier New');
+  size-adjust: 100%;
+  ascent-override: 93%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+  font-style: normal;
+  font-weight: 100 900;
 }
