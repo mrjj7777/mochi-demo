@@ -270,7 +270,7 @@ function Flavours({ bag, setBag }: { bag: number; setBag: (value: number) => voi
 
 const photoNames = [
   'mochi-model-1.webp',
-  'mochi-peach-model.webp',
+  'mochi-diptych-cherry.webp',
   'mochi-model-4.webp',
   'mochi-model-3.webp',
   'mochi-model-2.webp',
