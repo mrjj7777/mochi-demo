@@ -62,11 +62,11 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
     posterImg.onerror = settlePoster
     posterImg.src = HERO_POSTER
 
-    // Swift cap so preloader fills, squeezes, and wipes cleanly within ~550–750ms
+    // Swift cap so preloader fills, squeezes, and wipes cleanly within ~220–340ms
     const forceReadyTimer = window.setTimeout(() => {
       targetProgress = 1
       assetsCompleted = true
-    }, 340)
+    }, 110)
 
     const hardFinishTimer = window.setTimeout(() => {
       if (!finishedRef.current) {
@@ -74,7 +74,7 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
         setDismissed(true)
         onDone()
       }
-    }, 760)
+    }, 340)
 
     let raf = 0
     let last = performance.now()
@@ -110,10 +110,10 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
         if (wordRef.current) {
           wordRef.current.style.transform = `scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`
         }
-        if (now - squeezeStarted > 140 || squeezeSpring.atRest(0.025)) {
+        if (now - squeezeStarted > 65 || squeezeSpring.atRest(0.035)) {
           phase = 'wipe'
           if (rootRef.current) rootRef.current.style.pointerEvents = 'none'
-          wipeSpring.setTarget(-102)
+          wipeSpring.setTarget(-104)
         }
       } else if (phase === 'wipe') {
         const yPct = wipeSpring.step(dt)
@@ -143,10 +143,22 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
     }
   }, [done, onDone])
 
-  if (dismissed) return null
-
   return (
-    <div ref={rootRef} className="preloader" aria-hidden={dismissed}>
+    <div
+      ref={rootRef}
+      className="preloader"
+      aria-hidden={dismissed}
+      style={
+        dismissed
+          ? {
+              transform: 'translate3d(0, -105%, 0)',
+              opacity: 0,
+              visibility: 'hidden',
+              pointerEvents: 'none',
+            }
+          : undefined
+      }
+    >
       <div ref={wordRef} className="preloader__mark" aria-label="Loading MOCHI">
         <span className="preloader__word preloader__word--base" aria-hidden="true">MOCHI</span>
         <span ref={fillRef} className="preloader__word preloader__word--fill" aria-hidden="true">MOCHI</span>

@@ -25,6 +25,7 @@ function FooterWordFallback() {
 }
 
 export default function FooterSection({ reduced }: FooterSectionProps) {
+  const [nearViewport, setNearViewport] = useState(false)
   const [font, setFont] = useState(() => getCachedKronaFont())
   const wrapRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
@@ -33,7 +34,67 @@ export default function FooterSection({ reduced }: FooterSectionProps) {
   const enteredRef = useRef(false)
 
   useEffect(() => {
-    if (font) return
+    if (nearViewport) return
+    const el = wrapRef.current
+    if (!el || typeof window === 'undefined') return
+
+    let disposed = false
+    let observer: IntersectionObserver | null = null
+
+    const activate = () => {
+      if (disposed) return
+      setNearViewport(true)
+      observer?.disconnect()
+      window.removeEventListener('scroll', onScroll)
+    }
+
+    const checkPosition = () => {
+      if (disposed) return
+      const rect = el.getBoundingClientRect()
+      const vh = window.innerHeight || 800
+      if (
+        (window.scrollY > 4 && rect.top < vh + 600 && rect.bottom > -200) ||
+        (rect.top < vh * 0.95 && rect.bottom > 0)
+      ) {
+        activate()
+      }
+    }
+
+    const onScroll = () => {
+      checkPosition()
+    }
+
+    const rafId = requestAnimationFrame(() => {
+      if (disposed) return
+      checkPosition()
+      observer = new IntersectionObserver(
+        entries => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue
+            const vh = window.innerHeight || 800
+            if (window.scrollY > 4 || entry.boundingClientRect.top < vh * 0.95) {
+              activate()
+              break
+            }
+          }
+        },
+        { rootMargin: '500px 0px' },
+      )
+      observer.observe(el)
+    })
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+
+    return () => {
+      disposed = true
+      cancelAnimationFrame(rafId)
+      observer?.disconnect()
+      window.removeEventListener('scroll', onScroll)
+    }
+  }, [nearViewport])
+
+  useEffect(() => {
+    if (!nearViewport || font) return
     let active = true
     loadKronaFont()
       .then(loaded => {
@@ -43,17 +104,17 @@ export default function FooterSection({ reduced }: FooterSectionProps) {
     return () => {
       active = false
     }
-  }, [font])
+  }, [nearViewport, font])
 
   const word = useMemo(() => {
-    if (!font) return null
+    if (!font || !nearViewport) return null
     return extractWordLetters(font, 'MOCHI', {
       fontSize: 100,
       paddingX: 10,
       paddingTop: 10,
       paddingBottom: 10,
     })
-  }, [font])
+  }, [font, nearViewport])
 
   useEffect(() => {
     if (!word) return

@@ -64,6 +64,7 @@ const DEFAULT_KRONA_URL = '/fonts/krona-one-400-normal.ttf'
 
 let cachedFont: Font | null = null
 let fontPromise: Promise<Font> | null = null
+const extractedWordCache = new Map<string, ExtractedWord>()
 
 /** Returns the cached Krona One Font synchronously if already parsed. */
 export function getCachedKronaFont(): Font | null {
@@ -339,10 +340,14 @@ export function extractWordLetters(
   const fontSize = opts?.fontSize ?? 100
   const letterSpacing = opts?.letterSpacing ?? -0.03
   const kerning = opts?.kerning ?? true
-  const maxSegmentLength = opts?.maxSegmentLength ?? Math.max(1.5, fontSize * 0.025)
+  const maxSegmentLength = opts?.maxSegmentLength ?? Math.max(1.8, fontSize * 0.032)
   const paddingX = opts?.paddingX ?? fontSize * 0.1
   const paddingTop = opts?.paddingTop ?? fontSize * 0.1
   const paddingBottom = opts?.paddingBottom ?? fontSize * 0.1
+
+  const cacheKey = `${text}|${fontSize}|${letterSpacing}|${kerning ? 1 : 0}|${maxSegmentLength}|${paddingX}|${paddingTop}|${paddingBottom}`
+  const hit = extractedWordCache.get(cacheKey)
+  if (hit) return hit
 
   const scale = fontSize / font.unitsPerEm
   const glyphs = font.stringToGlyphs(text)
@@ -463,7 +468,7 @@ export function extractWordLetters(
     }
   })
 
-  return {
+  const result: ExtractedWord = {
     text,
     letters,
     totalWidth,
@@ -476,6 +481,8 @@ export function extractWordLetters(
     viewBox: `0 0 ${totalWidth.toFixed(2)} ${totalHeight.toFixed(2)}`,
     fontSize,
   }
+  extractedWordCache.set(cacheKey, result)
+  return result
 }
 
 /**

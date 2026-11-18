@@ -716,10 +716,72 @@ function YoursWord({
 }
 
 export default function BeliefSection({ reduced }: BeliefSectionProps) {
+  const sectionRef = useRef<HTMLElement>(null)
+  const [nearViewport, setNearViewport] = useState(false)
   const [font, setFont] = useState(() => getCachedKronaFont())
 
   useEffect(() => {
-    if (font) return
+    if (nearViewport) return
+    const el = sectionRef.current
+    if (!el || typeof window === 'undefined') return
+
+    let disposed = false
+    let observer: IntersectionObserver | null = null
+
+    const activate = () => {
+      if (disposed) return
+      setNearViewport(true)
+      observer?.disconnect()
+      window.removeEventListener('scroll', onScroll)
+    }
+
+    const checkPosition = () => {
+      if (disposed) return
+      const rect = el.getBoundingClientRect()
+      const vh = window.innerHeight || 800
+      if (
+        (window.scrollY > 4 && rect.top < vh + 500 && rect.bottom > -200) ||
+        (rect.top < vh * 0.92 && rect.bottom > 0)
+      ) {
+        activate()
+      }
+    }
+
+    const onScroll = () => {
+      checkPosition()
+    }
+
+    const rafId = requestAnimationFrame(() => {
+      if (disposed) return
+      checkPosition()
+      observer = new IntersectionObserver(
+        entries => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue
+            const vh = window.innerHeight || 800
+            if (window.scrollY > 4 || entry.boundingClientRect.top < vh * 0.92) {
+              activate()
+              break
+            }
+          }
+        },
+        { rootMargin: '450px 0px' },
+      )
+      observer.observe(el)
+    })
+
+    window.addEventListener('scroll', onScroll, { passive: true })
+
+    return () => {
+      disposed = true
+      cancelAnimationFrame(rafId)
+      observer?.disconnect()
+      window.removeEventListener('scroll', onScroll)
+    }
+  }, [nearViewport])
+
+  useEffect(() => {
+    if (!nearViewport || font) return
     let active = true
     loadKronaFont()
       .then(loaded => {
@@ -729,10 +791,10 @@ export default function BeliefSection({ reduced }: BeliefSectionProps) {
     return () => {
       active = false
     }
-  }, [font])
+  }, [nearViewport, font])
 
   const words = useMemo(() => {
-    if (!font) {
+    if (!font || !nearViewport) {
       return { soft: null, squeezable: null, yours: null }
     }
     return {
@@ -755,10 +817,11 @@ export default function BeliefSection({ reduced }: BeliefSectionProps) {
         paddingBottom: 10,
       }),
     }
-  }, [font])
+  }, [font, nearViewport])
 
   return (
     <section
+      ref={sectionRef}
       id="belief"
       className="belief section"
       data-aura="#2FA4A8,#E46A8E"
