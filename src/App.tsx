@@ -131,7 +131,7 @@ export default function App() {
   )
   const [tier] = useState<DeviceTier>(() => detectDeviceTier())
   const [mountKinetic, setMountKinetic] = useState(
-    () => reduced || (typeof window !== 'undefined' && window.scrollY > 4),
+    () => reduced || (typeof window !== 'undefined' && (window.innerWidth > 768 || window.scrollY > 4)),
   )
 
   const lenisRef = useRef<Lenis | null>(null)
