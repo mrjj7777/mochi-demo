@@ -9,8 +9,9 @@
   z-index: 120;
   display: grid;
   place-items: center;
-  background: var(--cream);
-  will-change: transform;
+  background: rgba(242, 237, 228, 0.92);
+  pointer-events: none;
+  will-change: transform, opacity;
 }
 
 .preloader__mark {

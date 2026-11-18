@@ -78,20 +78,15 @@ export default function WallpapersSection({ reduced = false, onOpen }: Wallpaper
   useEffect(() => {
     if (reduced) return
     let raf = 0
-    let visible = true
+    let visible = false
     let last = performance.now()
 
-    const io = new IntersectionObserver(
-      entries => {
-        visible = entries[0]?.isIntersecting ?? true
-      },
-      { rootMargin: '200px' },
-    )
-    if (sectionRef.current) io.observe(sectionRef.current)
-
     const tick = (now: number) => {
+      if (!visible || document.hidden) {
+        raf = 0
+        return
+      }
       raf = requestAnimationFrame(tick)
-      if (!visible || document.hidden) return
       const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000))
       last = now
 
@@ -106,9 +101,21 @@ export default function WallpapersSection({ reduced = false, onOpen }: Wallpaper
       })
     }
 
-    raf = requestAnimationFrame(tick)
+    const io = new IntersectionObserver(
+      entries => {
+        const nextVisible = entries[0]?.isIntersecting ?? false
+        visible = nextVisible
+        if (nextVisible && !raf) {
+          last = performance.now()
+          raf = requestAnimationFrame(tick)
+        }
+      },
+      { rootMargin: '200px' },
+    )
+    if (sectionRef.current) io.observe(sectionRef.current)
+
     return () => {
-      cancelAnimationFrame(raf)
+      if (raf) cancelAnimationFrame(raf)
       io.disconnect()
       window.clearTimeout(cycleTimerRef.current)
     }

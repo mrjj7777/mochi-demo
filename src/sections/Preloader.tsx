@@ -34,39 +34,44 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
       return
     }
 
-    let targetProgress = 0.2
+    let targetProgress = 0.35
     let assetsCompleted = false
     let phase: 'loading' | 'squeeze' | 'wipe' | 'done' = 'loading'
     let squeezeStarted = 0
 
-    const progressSpring = createSpring({ stiffness: 520, damping: 42, mass: 1 }, 0.15)
+    const progressSpring = createSpring({ stiffness: 680, damping: 48, mass: 0.7 }, 0.28)
     const squeezeSpring = createSpring('jelly', 1)
-    const wipeSpring = createSpring('ui', 0)
+    const wipeSpring = createSpring({ stiffness: 620, damping: 46, mass: 0.7 }, 0)
 
     const markTask = (weight: number) => {
       targetProgress = clamp(targetProgress + weight, 0, 1)
-      if (targetProgress >= 0.99) assetsCompleted = true
+      if (targetProgress >= 0.95) assetsCompleted = true
     }
 
     // Track real document.fonts readiness
     if (document.fonts?.ready) {
-      document.fonts.ready.then(() => markTask(0.4)).catch(() => markTask(0.4))
+      document.fonts.ready.then(() => markTask(0.35)).catch(() => markTask(0.35))
     } else {
-      markTask(0.4)
+      markTask(0.35)
     }
 
     // Track hero poster readiness (preloaded in index.html)
-    const posterImg = new Image()
-    const settlePoster = () => markTask(0.4)
-    posterImg.onload = settlePoster
-    posterImg.onerror = settlePoster
-    posterImg.src = HERO_POSTER
+    const existingPoster = document.querySelector<HTMLImageElement>('.hero__poster')
+    if (existingPoster?.complete && existingPoster.naturalWidth > 0) {
+      markTask(0.4)
+    } else {
+      const posterImg = new Image()
+      const settlePoster = () => markTask(0.4)
+      posterImg.onload = settlePoster
+      posterImg.onerror = settlePoster
+      posterImg.src = HERO_POSTER
+    }
 
-    // Swift cap so preloader fills, squeezes, and wipes cleanly within ~220–340ms
+    // Swift cap (~70–180ms) so preloader fills, squeezes, and hides without delaying LCP
     const forceReadyTimer = window.setTimeout(() => {
       targetProgress = 1
       assetsCompleted = true
-    }, 110)
+    }, 70)
 
     const hardFinishTimer = window.setTimeout(() => {
       if (!finishedRef.current) {
@@ -74,7 +79,7 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
         setDismissed(true)
         onDone()
       }
-    }, 340)
+    }, 180)
 
     let raf = 0
     let last = performance.now()
@@ -85,7 +90,7 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
       last = now
 
       if (phase === 'loading') {
-        const effectiveTarget = assetsCompleted ? 1 : Math.min(0.92, targetProgress + 0.18)
+        const effectiveTarget = assetsCompleted ? 1 : Math.min(0.94, targetProgress + 0.25)
         progressSpring.setTarget(effectiveTarget)
         const val = clamp(progressSpring.step(dt), 0, 1)
         const nextCount = Math.round(val * 100)
@@ -96,7 +101,7 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
         if (fillRef.current) {
           fillRef.current.style.clipPath = `inset(0 ${(100 - val * 100).toFixed(2)}% 0 0)`
         }
-        if (assetsCompleted && val >= 0.96) {
+        if (assetsCompleted && val >= 0.94) {
           setCount(100)
           if (fillRef.current) fillRef.current.style.clipPath = 'inset(0 0% 0 0)'
           phase = 'squeeze'
@@ -110,7 +115,7 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
         if (wordRef.current) {
           wordRef.current.style.transform = `scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`
         }
-        if (now - squeezeStarted > 65 || squeezeSpring.atRest(0.035)) {
+        if (now - squeezeStarted > 45 || squeezeSpring.atRest(0.04)) {
           phase = 'wipe'
           if (rootRef.current) rootRef.current.style.pointerEvents = 'none'
           wipeSpring.setTarget(-104)
@@ -119,8 +124,9 @@ export default function Preloader({ onDone, done = false }: PreloaderProps) {
         const yPct = wipeSpring.step(dt)
         if (rootRef.current) {
           rootRef.current.style.transform = `translate3d(0, ${yPct.toFixed(2)}%, 0)`
+          rootRef.current.style.opacity = clamp(1 + yPct / 85, 0, 1).toFixed(3)
         }
-        if (yPct <= -98.5 || wipeSpring.atRest(0.5)) {
+        if (yPct <= -92 || wipeSpring.atRest(1.5)) {
           phase = 'done'
           if (!finishedRef.current) {
             finishedRef.current = true

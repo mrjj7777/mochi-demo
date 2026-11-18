@@ -191,21 +191,16 @@ export default function LookbookSection({ reduced, onOpen }: LookbookSectionProp
   useEffect(() => {
     if (!desktopPinned) return
     let raf = 0
-    let visible = true
+    let visible = false
     let last = performance.now()
     const section = sectionRef.current
 
-    const io = new IntersectionObserver(
-      entries => {
-        visible = entries[0]?.isIntersecting ?? true
-      },
-      { rootMargin: '200px' },
-    )
-    if (section) io.observe(section)
-
     const tick = (now: number) => {
+      if (!visible || document.hidden) {
+        raf = 0
+        return
+      }
       raf = requestAnimationFrame(tick)
-      if (!visible || document.hidden) return
       const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000))
       last = now
 
@@ -284,9 +279,21 @@ export default function LookbookSection({ reduced, onOpen }: LookbookSectionProp
       }
     }
 
-    raf = requestAnimationFrame(tick)
+    const io = new IntersectionObserver(
+      entries => {
+        const nextVisible = entries[0]?.isIntersecting ?? false
+        visible = nextVisible
+        if (nextVisible && !raf) {
+          last = performance.now()
+          raf = requestAnimationFrame(tick)
+        }
+      },
+      { rootMargin: '200px' },
+    )
+    if (section) io.observe(section)
+
     return () => {
-      cancelAnimationFrame(raf)
+      if (raf) cancelAnimationFrame(raf)
       io.disconnect()
     }
   }, [desktopPinned, computeMaxTravel])

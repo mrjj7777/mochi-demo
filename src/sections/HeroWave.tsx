@@ -109,6 +109,9 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
     let nudgeRaf = 0
     let nudgeTimer = 0
     let nudgeRepeatTimer = 0
+    let lastDrawnIndex = -1
+    let cachedW = canvas.clientWidth
+    let cachedH = canvas.clientHeight
 
     const findNearestLoaded = (index: number): HTMLImageElement | undefined => {
       const list = loadedFramesRef.current
@@ -120,24 +123,32 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
       return undefined
     }
 
-    const computeAndDraw = () => {
+    const computeAndDraw = (force = false) => {
       if (disposed) return
-      const bounds = canvas.getBoundingClientRect()
-      if (bounds.width < 1 || bounds.height < 1) return
-
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
-      const pxW = Math.max(1, Math.round(bounds.width * dpr))
-      const pxH = Math.max(1, Math.round(bounds.height * dpr))
-      if (canvas.width !== pxW || canvas.height !== pxH) {
-        canvas.width = pxW
-        canvas.height = pxH
-      }
-
       const rawIndex = clamp(
         hasScrolledRef.current ? currentFrameRef.current : Math.max(currentFrameRef.current, nudgeFrameRef.current),
         0,
         count - 1,
       )
+      if (!force && posterReadyRef.current && Math.abs(rawIndex - lastDrawnIndex) < 0.001) {
+        return
+      }
+
+      if (cachedW < 1 || cachedH < 1) {
+        const bounds = canvas.getBoundingClientRect()
+        cachedW = bounds.width
+        cachedH = bounds.height
+      }
+      if (cachedW < 1 || cachedH < 1) return
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const pxW = Math.max(1, Math.round(cachedW * dpr))
+      const pxH = Math.max(1, Math.round(cachedH * dpr))
+      if (canvas.width !== pxW || canvas.height !== pxH) {
+        canvas.width = pxW
+        canvas.height = pxH
+      }
+
       const lower = Math.floor(rawIndex)
       const upper = Math.min(count - 1, lower + 1)
       const frac = rawIndex - lower
@@ -146,15 +157,15 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
       const imgB = frac > 0.02 ? findNearestLoaded(upper) : undefined
       if (!imgA?.naturalWidth) return
 
-      const scale = Math.max(bounds.width / imgA.naturalWidth, bounds.height / imgA.naturalHeight)
+      const scale = Math.max(cachedW / imgA.naturalWidth, cachedH / imgA.naturalHeight)
       const drawW = imgA.naturalWidth * scale
       const drawH = imgA.naturalHeight * scale
-      const drawX = (bounds.width - drawW) * 0.5
-      const drawY = (bounds.height - drawH) * 0.5
+      const drawX = (cachedW - drawW) * 0.5
+      const drawY = (cachedH - drawH) * 0.5
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       ctx.fillStyle = '#F2EDE4'
-      ctx.fillRect(0, 0, bounds.width, bounds.height)
+      ctx.fillRect(0, 0, cachedW, cachedH)
       ctx.globalAlpha = 1
       ctx.drawImage(imgA, drawX, drawY, drawW, drawH)
 
@@ -165,6 +176,7 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
         ctx.globalAlpha = 1
       }
 
+      lastDrawnIndex = rawIndex
       if (!posterReadyRef.current) {
         posterReadyRef.current = true
         canvas.dataset.ready = 'true'
@@ -208,11 +220,15 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
         if (disposed) return
         loadedFramesRef.current[index] = img
         if (index === 0) {
-          computeAndDraw()
+          computeAndDraw(true)
           updateHotspotLayout()
         }
       }
-      img.src = `${dir}/${String(index + 1).padStart(4, '0')}.webp`
+      // Frame 0 reuses preloaded /media/hero-seq/poster.webp so boot makes zero duplicate image requests
+      img.src =
+        index === 0
+          ? '/media/hero-seq/poster.webp'
+          : `${dir}/${String(index + 1).padStart(4, '0')}.webp`
     }
 
     // 1. Frame 0 only at boot so Slow 4G mobile LCP is never saturated
@@ -298,7 +314,10 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
     raf = requestAnimationFrame(tick)
 
     const onResize = () => {
-      computeAndDraw()
+      const bounds = canvas.getBoundingClientRect()
+      cachedW = bounds.width
+      cachedH = bounds.height
+      computeAndDraw(true)
       updateHotspotLayout()
     }
     const ro = new ResizeObserver(onResize)
@@ -412,7 +431,8 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
               width={1600}
               height={900}
               alt="Six MOCHI lip jelly tubes standing in a row"
-              decoding="async"
+              loading="eager"
+              decoding="sync"
               fetchPriority="high"
             />
             {!reduced && (
