@@ -36,7 +36,7 @@ export type StandScene3DProps = {
 const SLOT_XS = [-2.9, -1.74, -0.58, 0.58, 1.74, 2.9]
 const MAX_STAND_RAD = (35 * Math.PI) / 180
 const WELL_FLOOR_Y = 0.22
-const TUBE_START_Y = 4.6
+const TUBE_START_Y = 3.8
 const STAND_AURA = '#8FC3E6'
 
 let sharedStandGeo: THREE.BufferGeometry | null = null
@@ -137,7 +137,7 @@ function StandStage({ active, tier, isActive, onHoverFlavour }: StandInnerProps)
   const hoverIndexRef = useRef<number | null>(null)
   const landedRef = useRef<boolean[]>(flavours.map(() => false))
   const releasedRef = useRef<boolean[]>(flavours.map(() => false))
-  const dropClockRef = useRef(0)
+  const dropStartAtRef = useRef<number | null>(null)
 
   const orbitSpring = useRef(createSpring('heavy', 0))
   const dragRef = useRef({ active: false, startX: 0, startOrbit: 0 })
@@ -203,11 +203,13 @@ function StandStage({ active, tier, isActive, onHoverFlavour }: StandInnerProps)
   useFrame((_, rawDelta) => {
     if (!isActive) return
     const dt = Math.min(0.05, Math.max(0.001, rawDelta))
+    const nowMs = performance.now()
 
     if (active) {
-      dropClockRef.current += dt
+      if (dropStartAtRef.current === null) dropStartAtRef.current = nowMs
+      const wallElapsedSec = (nowMs - dropStartAtRef.current) / 1000
       for (let i = 0; i < flavours.length; i += 1) {
-        if (!releasedRef.current[i] && dropClockRef.current >= i * 0.13) {
+        if (!releasedRef.current[i] && wallElapsedSec >= i * 0.085) {
           const rb = bodyRefs.current[i]
           if (rb) {
             releasedRef.current[i] = true
@@ -228,6 +230,7 @@ function StandStage({ active, tier, isActive, onHoverFlavour }: StandInnerProps)
     )
     camera.lookAt(0, 0.72, 0)
 
+    const wallElapsed = dropStartAtRef.current !== null ? (nowMs - dropStartAtRef.current) / 1000 : 0
     for (let i = 0; i < flavours.length; i += 1) {
       const sq = squashSprings.current[i].step(dt)
       const wb = wobbleSprings.current[i].step(dt)
@@ -239,6 +242,18 @@ function StandStage({ active, tier, isActive, onHoverFlavour }: StandInnerProps)
       d.time += dt
 
       const rb = bodyRefs.current[i]
+      if (rb && active && releasedRef.current[i]) {
+        const pos = rb.translation()
+        const vel = rb.linvel()
+        const settledY = WELL_FLOOR_Y + 1.50
+        // Safety guard: if a tube stalled above its well (e.g. heavy frame hitch), guide it cleanly down
+        if (wallElapsed > i * 0.085 + 0.65 && pos.y > settledY + 0.05 && Math.abs(vel.y) < 0.14) {
+          rb.setTranslation({ x: SLOT_XS[i], y: pos.y, z: spineZAt(SLOT_XS[i]) }, true)
+          rb.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true)
+          rb.setLinvel({ x: 0, y: Math.min(vel.y, -2.5), z: 0 }, true)
+          rb.wakeUp()
+        }
+      }
       const shadow = tubeShadowRefs.current[i]
       if (rb && shadow) {
         const pos = rb.translation()
@@ -311,19 +326,19 @@ function StandStage({ active, tier, isActive, onHoverFlavour }: StandInnerProps)
       ))}
 
       <Physics gravity={[0, -15, 0]} paused={!isActive || !active} timeStep={1 / 60}>
-        {/* Fixed stand slot floors & pocket guides (1 RigidBody total) */}
-        <RigidBody type="fixed" colliders={false} restitution={0.24} friction={0.78}>
+        {/* Fixed stand slot floors & low-profile slippery pocket guides (1 RigidBody total) */}
+        <RigidBody type="fixed" colliders={false} restitution={0.22} friction={0.18}>
           {SLOT_XS.map((sx, idx) => {
             const sz = spineZAt(sx)
             return (
               <group key={`slot-col-${idx}`}>
                 {/* Thick slot bottom floor prevents high-velocity tunneling */}
-                <CuboidCollider args={[0.50, 0.36, 0.46]} position={[sx, WELL_FLOOR_Y - 0.36, sz]} />
-                {/* Pocket walls guiding each tube squarely into its sculpted ceramic well */}
-                <CuboidCollider args={[0.08, 0.65, 0.50]} position={[sx - 0.54, WELL_FLOOR_Y + 0.52, sz]} />
-                <CuboidCollider args={[0.08, 0.65, 0.50]} position={[sx + 0.54, WELL_FLOOR_Y + 0.52, sz]} />
-                <CuboidCollider args={[0.52, 0.65, 0.08]} position={[sx, WELL_FLOOR_Y + 0.52, sz - 0.48]} />
-                <CuboidCollider args={[0.52, 0.65, 0.08]} position={[sx, WELL_FLOOR_Y + 0.52, sz + 0.48]} />
+                <CuboidCollider args={[0.54, 0.36, 0.50]} position={[sx, WELL_FLOOR_Y - 0.36, sz]} />
+                {/* Low-profile pocket rim guides inside the ceramic well (top <= 0.50, zero high lip to snag on) */}
+                <CuboidCollider args={[0.06, 0.14, 0.52]} position={[sx - 0.56, WELL_FLOOR_Y + 0.14, sz]} />
+                <CuboidCollider args={[0.06, 0.14, 0.52]} position={[sx + 0.56, WELL_FLOOR_Y + 0.14, sz]} />
+                <CuboidCollider args={[0.56, 0.14, 0.06]} position={[sx, WELL_FLOOR_Y + 0.14, sz - 0.50]} />
+                <CuboidCollider args={[0.56, 0.14, 0.06]} position={[sx, WELL_FLOOR_Y + 0.14, sz + 0.50]} />
               </group>
             )
           })}
@@ -344,13 +359,13 @@ function StandStage({ active, tier, isActive, onHoverFlavour }: StandInnerProps)
               canSleep
               ccd
               gravityScale={releasedRef.current[i] ? 1 : 0}
-              position={[sx, TUBE_START_Y + i * 0.30, sz]}
-              rotation={[(i % 2 === 0 ? 0.03 : -0.03), 0, (i % 2 === 0 ? -0.025 : 0.025)]}
-              linearDamping={0.5}
-              angularDamping={2.4}
+              position={[sx, TUBE_START_Y + i * 0.28, sz]}
+              rotation={[0, 0, 0]}
+              linearDamping={0.45}
+              angularDamping={3.2}
               enabledRotations={[true, false, true]}
-              restitution={0.24}
-              friction={0.72}
+              restitution={0.22}
+              friction={0.45}
               onCollisionEnter={() => {
                 if (!landedRef.current[i]) {
                   landedRef.current[i] = true
@@ -368,7 +383,7 @@ function StandStage({ active, tier, isActive, onHoverFlavour }: StandInnerProps)
                 }
               }}
             >
-              <CuboidCollider args={[0.42, 1.50, 0.36]} position={[0, 0, 0]} />
+              <CuboidCollider args={[0.38, 1.50, 0.32]} position={[0, 0, 0]} />
               <MochiTubeMesh
                 colour={flavour.jelly}
                 aura={STAND_AURA}

@@ -177,6 +177,7 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
         return
       }
       const bounds = canvas.getBoundingClientRect()
+      const pinBounds = pinRef.current?.getBoundingClientRect()
       if (bounds.width < 1 || bounds.height < 1) return
       const refImg = findNearestLoaded(0)
       const natW = refImg?.naturalWidth || 1600
@@ -184,15 +185,18 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
       const scale = Math.max(bounds.width / natW, bounds.height / natH)
       const drawW = natW * scale
       const drawH = natH * scale
-      const drawX = (bounds.width - drawW) * 0.5
-      const drawY = (bounds.height - drawH) * 0.5
+      const drawX = (bounds.width - drawW) * 0.5 + (pinBounds ? bounds.left - pinBounds.left : 0)
+      const drawY = (bounds.height - drawH) * 0.5 + (pinBounds ? bounds.top - pinBounds.top : 0)
+      const pinW = pinBounds?.width ?? bounds.width
 
       setHotspotCoords(
         TUBE_CENTRES_X.map(tx => ({
           left: drawX + tx * drawW,
           top: drawY + 0.25 * drawH,
           height: 0.58 * drawH,
-        })),
+        })).map(coord =>
+          coord.left >= 28 && coord.left <= pinW - 28 ? coord : { left: -1, top: 0, height: 0 },
+        ),
       )
     }
 
@@ -268,6 +272,8 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
       computeAndDraw()
       updateHotspotLayout()
     }
+    const ro = new ResizeObserver(onResize)
+    ro.observe(canvas)
     window.addEventListener('resize', onResize)
     updateHotspotLayout()
 
@@ -278,6 +284,7 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
       window.clearTimeout(nudgeTimer)
       window.clearTimeout(nudgeRepeatTimer)
       restTimers.forEach(t => window.clearTimeout(t))
+      ro.disconnect()
       window.removeEventListener('resize', onResize)
     }
   }, [isMobile, reduced])
@@ -336,8 +343,8 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
             canvasWrapRef.current.style.transform = `scale(${s.toFixed(4)})`
           }
           if (dissolveRef.current) {
-            dissolveRef.current.style.opacity = (0.18 + exitT * 0.82).toFixed(3)
-            dissolveRef.current.style.transform = `translate3d(0, ${((1 - exitT) * 28).toFixed(1)}%, 0)`
+            dissolveRef.current.style.opacity = (0.12 + exitT * 0.68).toFixed(3)
+            dissolveRef.current.style.transform = `translate3d(0, ${((1 - exitT) * 20).toFixed(1)}%, 0)`
           }
           if (scrollCueRef.current) {
             const cueOpacity = clamp(1 - p * 12, 0, 1)
@@ -403,7 +410,7 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
           >
             {flavours.map((item, idx) => {
               const coord = hotspotCoords[idx]
-              if (!coord) return null
+              if (!coord || coord.left < 0) return null
               const isOpen = activeHotspot === idx
               return (
                 <button

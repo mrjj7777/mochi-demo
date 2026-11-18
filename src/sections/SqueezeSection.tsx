@@ -164,21 +164,31 @@ export default function SqueezeSection({ reduced, tier }: SharedSectionProps) {
       const lr = labelEl.getBoundingClientRect()
       const anchor = anchors[item.key] ?? DEFAULT_ANCHORS[item.key]
 
-      const startX = item.side === 'left' ? lr.right - sr.left + 10 : lr.left - sr.left - 10
-      const startY = lr.top - sr.top + lr.height * 0.5
+      const startX = isMobile
+        ? lr.left - sr.left + lr.width * 0.5
+        : item.side === 'left'
+          ? lr.right - sr.left + 10
+          : lr.left - sr.left - 10
+      const startY = isMobile
+        ? item.row === 'top'
+          ? lr.bottom - sr.top + 6
+          : lr.top - sr.top - 6
+        : lr.top - sr.top + lr.height * 0.5
 
       const endX = pr.left - sr.left + anchor[0] * pr.width
       const endY = pr.top - sr.top + anchor[1] * pr.height
 
-      const midX = startX + (endX - startX) * 0.56
-      const ctrl1Y = startY
-      const ctrl2Y = endY
-      const d = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${ctrl1Y.toFixed(1)}, ${midX.toFixed(1)} ${ctrl2Y.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`
+      const d = isMobile
+        ? `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${startX.toFixed(1)} ${((startY + endY) * 0.5).toFixed(1)}, ${endX.toFixed(1)} ${((startY + endY) * 0.5).toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`
+        : (() => {
+            const midX = startX + (endX - startX) * 0.56
+            return `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`
+          })()
       const approxLen = Math.hypot(endX - startX, endY - startY) * 1.25
       computed.push({ key: item.key, d, length: Math.max(40, approxLen) })
     })
     setLines(computed)
-  }, [anchors])
+  }, [anchors, isMobile])
 
   useEffect(() => {
     recomputeLines()
@@ -233,8 +243,8 @@ export default function SqueezeSection({ reduced, tier }: SharedSectionProps) {
                     width={1122}
                     height={1402}
                     alt="Cherry MOCHI lip jelly tube"
-                    loading="lazy"
-                    decoding="async"
+                    loading={reduced ? 'eager' : 'lazy'}
+                    decoding={reduced ? 'sync' : 'async'}
                   />
                 }
               >
@@ -253,8 +263,8 @@ export default function SqueezeSection({ reduced, tier }: SharedSectionProps) {
                 width={1122}
                 height={1402}
                 alt="Cherry MOCHI lip jelly tube"
-                loading="lazy"
-                decoding="async"
+                loading="eager"
+                decoding="sync"
               />
             )}
           </div>

@@ -102,8 +102,8 @@ export default function AllSixSection({ reduced, tier }: SharedSectionProps) {
             width={meta.width}
             height={meta.height}
             alt="All six MOCHI lip jelly flavours in a pile"
-            loading="lazy"
-            decoding="async"
+            loading={reduced || tier === 'low' ? 'eager' : 'lazy'}
+            decoding={reduced || tier === 'low' ? 'sync' : 'async'}
           />
         </picture>
       </div>

@@ -40,17 +40,19 @@ const PILE_AURA = '#E46A8E'
 const FLOOR_Y = 0
 const KINEMATIC_PARK_Y = 28
 
-function buildSeeds(count: number): TubeSeed[] {
+function buildSeeds(count: number, compact = false): TubeSeed[] {
   const seeds: TubeSeed[] = []
+  const maxSpreadX = compact ? 1.85 : 3.2
+  const maxSpreadZ = compact ? 1.45 : 1.8
   for (let i = 0; i < count; i += 1) {
     // 3 tubes per flavour on high (18), balanced spread on mid (10)
     const flavour = flavours[i % flavours.length]
     const ring = i % 6
     const layer = Math.floor(i / 6)
     const angle = (ring / 6) * Math.PI * 2 + layer * 0.52
-    const rad = 1.05 + (i % 3) * 0.85
-    const x = clamp(Math.cos(angle) * rad + ((i % 2 === 0 ? 1 : -1) * 0.35), -3.2, 3.2)
-    const z = clamp(Math.sin(angle) * (rad * 0.65), -1.8, 1.8)
+    const rad = (compact ? 0.72 : 1.05) + (i % 3) * (compact ? 0.52 : 0.85)
+    const x = clamp(Math.cos(angle) * rad + ((i % 2 === 0 ? 1 : -1) * (compact ? 0.22 : 0.35)), -maxSpreadX, maxSpreadX)
+    const z = clamp(Math.sin(angle) * (rad * 0.65), -maxSpreadZ, maxSpreadZ)
     const y = 4.6 + i * 0.55
 
     // Varied initial tilts so tubes cascade into a natural organic pile
@@ -75,8 +77,9 @@ type PileStageProps = {
 
 function PileStage({ active, tier, isActive }: PileStageProps) {
   const { camera, gl, size } = useThree()
-  const count = tier === 'mid' ? 10 : 18
-  const seeds = useMemo(() => buildSeeds(count), [count])
+  const isCompact = size.width <= 700 || size.width / Math.max(1, size.height) < 0.88
+  const count = tier === 'mid' || isCompact ? 10 : 18
+  const seeds = useMemo(() => buildSeeds(count, isCompact), [count, isCompact])
 
   const shadowTex = useMemo(() => getSoftShadowTexture(), [])
   const shadowTint = useMemo(() => auraShadowColor(PILE_AURA, 0.42), [])
@@ -112,8 +115,8 @@ function PileStage({ active, tier, isActive }: PileStageProps) {
   const hitVec = useMemo(() => new THREE.Vector3(), [])
 
   const aspect = Math.max(0.45, size.width / Math.max(1, size.height))
-  const wallHalfX = aspect < 0.9 ? 3.2 : 4.7
-  const wallHalfZ = aspect < 0.9 ? 2.5 : 2.85
+  const wallHalfX = isCompact ? 2.65 : 4.7
+  const wallHalfZ = isCompact ? 2.35 : 2.85
 
   useEffect(() => {
     gl.toneMapping = THREE.ACESFilmicToneMapping
@@ -122,11 +125,11 @@ function PileStage({ active, tier, isActive }: PileStageProps) {
 
   useEffect(() => {
     const cam = camera as THREE.PerspectiveCamera
-    const dist = aspect < 0.85 ? 15.2 : 12.6
+    const dist = isCompact ? clamp(15.2 / Math.max(0.66, aspect), 16.5, 22.0) : 12.6
     cam.position.set(0, dist * 0.96, dist * 0.36)
     cam.lookAt(0, 0.25, 0.1)
     cam.updateProjectionMatrix()
-  }, [camera, aspect])
+  }, [camera, aspect, isCompact])
 
   useEffect(() => {
     const dom = gl.domElement

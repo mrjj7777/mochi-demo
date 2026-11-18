@@ -274,8 +274,8 @@ export default function WallpapersSection({ reduced = false, onOpen }: Wallpaper
                       width={1290}
                       height={2796}
                       alt={`${item.name} MOCHI phone wallpaper`}
-                      loading="lazy"
-                      decoding="async"
+                      loading="eager"
+                      decoding="sync"
                     />
                   </button>
                   <p className="wallpaper-print__caption micro">

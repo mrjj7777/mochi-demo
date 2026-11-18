@@ -188,8 +188,8 @@ export default function TextureSection({ reduced, tier, onLoupeHover }: TextureS
             width={meta.width}
             height={meta.height}
             alt="MOCHI peach lip jelly on glossy lips"
-            loading="lazy"
-            decoding="async"
+            loading={reduced ? 'eager' : 'lazy'}
+            decoding={reduced ? 'sync' : 'async'}
           />
         </picture>
 
@@ -211,9 +211,9 @@ export default function TextureSection({ reduced, tier, onLoupeHover }: TextureS
 
         {visible && !reduced && (
           <span
-            className="texture__readout micro"
+            className={`texture__readout ${coords.xPct > 55 ? 'texture__readout--flip' : ''} micro`}
             style={{
-              left: `${clamp(coords.xPct, 14, 72).toFixed(2)}%`,
+              left: `${clamp(coords.xPct, isTouch ? 24 : 14, isTouch ? 76 : 86).toFixed(2)}%`,
               top: `${clamp(coords.yPct, 18, 76).toFixed(2)}%`,
             }}
             aria-hidden="true"

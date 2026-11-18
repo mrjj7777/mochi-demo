@@ -81,7 +81,7 @@ const LOOKBOOK_FRAMES: LookbookFrame[] = [
   },
 ]
 
-function LookbookImage({ src, alt }: { src: string; alt: string }) {
+function LookbookImage({ src, alt, eager = false }: { src: string; alt: string; eager?: boolean }) {
   const meta = useMediaMeta(src)
   return (
     <div
@@ -95,8 +95,8 @@ function LookbookImage({ src, alt }: { src: string; alt: string }) {
           width={meta.width}
           height={meta.height}
           alt={alt}
-          loading="lazy"
-          decoding="async"
+          loading={eager ? 'eager' : 'lazy'}
+          decoding={eager ? 'sync' : 'async'}
           draggable={false}
         />
       </picture>
@@ -230,11 +230,18 @@ export default function LookbookSection({ reduced, onOpen }: LookbookSectionProp
         getComputedStyle(document.documentElement).getPropertyValue('--scroll-velocity') || '0',
       )
       const targetSkew = clamp(instVel * 0.0016 + globalScrollVel * 0.45, -3, 3)
-      skewSpring.current.setTarget(targetSkew)
-      const skewDeg = clamp(skewSpring.current.step(dt), -3, 3)
+      skewSpring.current.setTarget(Math.abs(targetSkew) < 0.01 ? 0 : targetSkew)
+      let skewDeg = clamp(skewSpring.current.step(dt), -3, 3)
+      if (Math.abs(targetSkew) < 0.01 && Math.abs(skewDeg) < 0.025 && Math.abs(skewSpring.current.velocity) < 0.08) {
+        skewSpring.current.snap(0)
+        skewDeg = 0
+      }
 
       if (trackRef.current) {
-        trackRef.current.style.transform = `translate3d(${clampedX.toFixed(2)}px, 0, 0) skewX(${skewDeg.toFixed(3)}deg)`
+        trackRef.current.style.transform =
+          Math.abs(skewDeg) < 0.01
+            ? `translate3d(${clampedX.toFixed(2)}px, 0, 0)`
+            : `translate3d(${clampedX.toFixed(2)}px, 0, 0) skewX(${skewDeg.toFixed(3)}deg)`
       }
 
       // Studio flash / luminous cream light sweep as each creator frame enters focal light center
@@ -391,7 +398,7 @@ export default function LookbookSection({ reduced, onOpen }: LookbookSectionProp
                 aria-label={`Open ${frame.caption} lookbook portrait`}
               >
                 <div className="lookbook__photo-box">
-                  <LookbookImage src={frame.src} alt={frame.alt} />
+                  <LookbookImage src={frame.src} alt={frame.alt} eager />
                   {desktopPinned && (
                     <span
                       ref={el => {

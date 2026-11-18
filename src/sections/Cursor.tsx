@@ -146,6 +146,7 @@ export default function Cursor({ suppressed = false }: CursorProps) {
     <div
       ref={boxRef}
       className={`mochi-cursor ${bracketed ? 'mochi-cursor--bracketed' : ''} ${hidden ? 'mochi-cursor--hidden' : ''}`}
+      style={hidden ? { display: 'none' } : undefined}
       aria-hidden="true"
     >
       <span ref={crossRef} className="mochi-cursor__cross" />

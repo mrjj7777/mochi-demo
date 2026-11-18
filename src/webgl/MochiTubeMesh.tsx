@@ -335,13 +335,17 @@ export function getEmbossTextures(): {
   return { normalMap: sharedEmbossNormal, heightMap: sharedEmbossHeight }
 }
 
-function createUniformBundle(colour: string, prevColour?: string): ShaderUniformBundle {
+function createUniformBundle(colour: string, prevColour?: string, isLayered = false): ShaderUniformBundle {
   const nextCol = new THREE.Color(colour)
   const prevCol = new THREE.Color(prevColour ?? colour)
-  const nextOuter = new THREE.Color('#FAF7F2').lerp(nextCol, 0.62)
-  const prevOuter = new THREE.Color('#FAF7F2').lerp(prevCol, 0.62)
-  const nextAtten = nextCol.clone()
-  const prevAtten = prevCol.clone()
+  const nextOuter = isLayered
+    ? nextCol.clone()
+    : new THREE.Color('#FFFFFF').lerp(nextCol, 0.50)
+  const prevOuter = isLayered
+    ? prevCol.clone()
+    : new THREE.Color('#FFFFFF').lerp(prevCol, 0.50)
+  const nextAtten = isLayered ? nextCol.clone() : nextCol.clone().lerp(new THREE.Color('#FFFFFF'), 0.05)
+  const prevAtten = isLayered ? prevCol.clone() : prevCol.clone().lerp(new THREE.Color('#FFFFFF'), 0.05)
   const { heightMap } = getEmbossTextures()
   return {
     uTime: { value: 0 },
@@ -440,14 +444,14 @@ ${
 float embossSample = texture2D(uEmbossMap, vMochiUv).r;
 float embossEdge = smoothstep(0.16, 0.66, embossSample) * (1.0 - smoothstep(0.66, 0.98, embossSample) * 0.45);
 diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.98, 0.96, 0.94), embossEdge * 0.24);`
-    : `diffuseColor.rgb = mix(uPrevAtten, uNextAtten, mochiPourMask) * 0.78;`
+    : `diffuseColor.rgb = mix(uPrevAtten, uNextAtten, mochiPourMask) * 1.04;`
 }`,
   )
 
-  if (options.isOuter) {
+  if (options.isOuter && !options.isLayered) {
     shader.fragmentShader = shader.fragmentShader.replace(
       'material.attenuationColor = attenuationColor;',
-      `material.attenuationColor = max(mix(uPrevAtten, uNextAtten, mochiPourMask), vec3(0.015));`,
+      `material.attenuationColor = max(mix(uPrevAtten, uNextAtten, mochiPourMask), vec3(0.02));`,
     )
   }
 
@@ -458,13 +462,19 @@ totalEmissiveRadiance += mix(uNextAtten, vec3(0.98, 0.96, 0.94), 0.35) * mochiMe
 ${
   options.isLayered
     ? `vec3 viewDirMochi = normalize(vViewPosition);
-float rimSil = pow(1.0 - clamp(abs(dot(normal, viewDirMochi)), 0.0, 1.0), 2.6);
+float rimSil = pow(1.0 - clamp(abs(dot(normal, viewDirMochi)), 0.0, 1.0), 2.5);
 float embossFrosted = smoothstep(0.18, 0.72, texture2D(uEmbossMap, vMochiUv).r);
-diffuseColor.a = clamp(0.18 + rimSil * 0.44 + embossFrosted * 0.14, 0.18, 0.72);
-totalEmissiveRadiance += mix(pourBodyCol, vec3(0.98, 0.96, 0.94), 0.35) * rimSil * 0.07;`
-    : `vec3 viewDirInner = normalize(vViewPosition);
-float coreFresnel = pow(1.0 - clamp(abs(dot(normal, viewDirInner)), 0.0, 1.0), 2.3);
-totalEmissiveRadiance += mix(uPrevAtten, uNextAtten, mochiPourMask) * (0.04 + coreFresnel * 0.10);`
+vec3 jellyCol = mix(uPrevAtten, uNextAtten, mochiPourMask);
+diffuseColor.rgb = mix(jellyCol * 0.96, mix(jellyCol * 1.12, vec3(0.98, 0.96, 0.94), 0.22), rimSil);
+diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.98, 0.96, 0.94), embossFrosted * 0.14);
+totalEmissiveRadiance += jellyCol * (0.06 + rimSil * 0.12);`
+    : options.isOuter
+      ? `vec3 viewDirOuter = normalize(vViewPosition);
+float outerRim = pow(1.0 - clamp(abs(dot(normal, viewDirOuter)), 0.0, 1.0), 2.4);
+totalEmissiveRadiance += mix(uPrevAtten, uNextAtten, mochiPourMask) * (0.04 + outerRim * 0.12);`
+      : `vec3 viewDirInner = normalize(vViewPosition);
+float coreFresnel = pow(1.0 - clamp(abs(dot(normal, viewDirInner)), 0.0, 1.0), 2.0);
+totalEmissiveRadiance += mix(uPrevAtten, uNextAtten, mochiPourMask) * (0.12 + coreFresnel * 0.18);`
 }`,
   )
 }
@@ -518,23 +528,26 @@ export function MochiTubeMesh({
   const capGeo = useMemo(() => getTubeCapGeometry(), [])
   const { normalMap } = useMemo(() => getEmbossTextures(), [])
 
-  const outerUniforms = useMemo(() => createUniformBundle(colour, prevColour), [])
-  const innerUniforms = useMemo(() => createUniformBundle(colour, prevColour), [])
-
   const isLayered = transmissionMode === 'layered'
+  const outerUniforms = useMemo(() => createUniformBundle(colour, prevColour, isLayered), [])
+  const innerUniforms = useMemo(() => createUniformBundle(colour, prevColour, false), [])
   const transmissionBg = useMemo(() => auraTransmissionBg(aura, 0.16), [aura])
 
   const colourPair = useMemo(() => {
     const base = new THREE.Color(colour)
     const prev = new THREE.Color(prevColour ?? colour)
-    const outerNext = new THREE.Color('#FAF7F2').lerp(base, 0.62)
-    const outerPrev = new THREE.Color('#FAF7F2').lerp(prev, 0.62)
-    const attenNext = base.clone()
-    const attenPrev = prev.clone()
+    const outerNext = isLayered
+      ? base.clone()
+      : new THREE.Color('#FFFFFF').lerp(base, 0.50)
+    const outerPrev = isLayered
+      ? prev.clone()
+      : new THREE.Color('#FFFFFF').lerp(prev, 0.50)
+    const attenNext = isLayered ? base.clone() : base.clone().lerp(new THREE.Color('#FFFFFF'), 0.05)
+    const attenPrev = isLayered ? prev.clone() : prev.clone().lerp(new THREE.Color('#FFFFFF'), 0.05)
     const neckTint = base.clone().lerp(new THREE.Color('#FAF7F2'), 0.56)
     const beadTint = base.clone()
     return { base, prev, outerNext, outerPrev, attenNext, attenPrev, neckTint, beadTint }
-  }, [colour, prevColour])
+  }, [colour, prevColour, isLayered])
 
   useEffect(() => {
     outerUniforms.uNextColor.value.copy(colourPair.outerNext)
@@ -630,22 +643,24 @@ export function MochiTubeMesh({
 
   return (
     <group ref={rootGroupRef}>
-      {/* Inner deep saturated jelly core */}
-      <mesh geometry={innerGeo} name="MOCHI inner jelly" renderOrder={1}>
-        <meshPhysicalMaterial
-          ref={innerMatRef}
-          color={colourPair.base}
-          roughness={0.28}
-          metalness={0}
-          clearcoat={0.45}
-          clearcoatRoughness={0.14}
-          sheen={0.25}
-          sheenColor={colourPair.outerNext}
-          envMapIntensity={0.85}
-        />
-      </mesh>
+      {/* Inner deep saturated jelly core (only needed for true refractive transmission mode) */}
+      {!isLayered && (
+        <mesh geometry={innerGeo} name="MOCHI inner jelly" renderOrder={1}>
+          <meshPhysicalMaterial
+            ref={innerMatRef}
+            color={colourPair.attenNext}
+            roughness={0.24}
+            metalness={0}
+            clearcoat={0.5}
+            clearcoatRoughness={0.12}
+            sheen={0.30}
+            sheenColor={colourPair.outerNext}
+            envMapIntensity={1.05}
+          />
+        </mesh>
+      )}
 
-      {/* Outer frosted-glossy translucent silicone sleeve */}
+      {/* Outer frosted-glossy translucent silicone sleeve (opaque backlit shader on multi-tube pile/stand to eliminate alpha edge halos) */}
       <mesh
         ref={bodyMeshRef}
         geometry={bodyGeo}
@@ -659,31 +674,30 @@ export function MochiTubeMesh({
           <meshPhysicalMaterial
             ref={outerMatRef}
             color={colourPair.outerNext}
-            transparent
-            opacity={0.28}
-            depthWrite={false}
-            roughness={0.18}
+            transparent={false}
+            depthWrite={true}
+            roughness={0.16}
             metalness={0}
-            ior={1.38}
+            ior={1.42}
             clearcoat={1}
             clearcoatRoughness={0.04}
-            sheen={0.45}
-            sheenRoughness={0.42}
+            sheen={0.48}
+            sheenRoughness={0.36}
             sheenColor="#FAF7F2"
             normalMap={normalMap}
             normalScale={new THREE.Vector2(1.05, 1.05)}
-            envMapIntensity={1.0}
+            envMapIntensity={1.1}
           />
         ) : (
-            <MeshTransmissionMaterial
+          <MeshTransmissionMaterial
             ref={outerMatRef as any}
             color={colourPair.outerNext}
             background={transmissionBg}
             samples={samples}
             resolution={resolution}
-            transmission={0.94}
-            thickness={0.68}
-            roughness={0.18}
+            transmission={0.95}
+            thickness={0.62}
+            roughness={0.17}
             ior={1.38}
             chromaticAberration={0.018}
             anisotropicBlur={0.10}
@@ -691,7 +705,7 @@ export function MochiTubeMesh({
             distortionScale={0.4}
             temporalDistortion={0}
             attenuationColor={colourPair.attenNext}
-            attenuationDistance={0.72}
+            attenuationDistance={0.95}
             clearcoat={1}
             clearcoatRoughness={0.05}
             sheen={0.34}
@@ -699,7 +713,7 @@ export function MochiTubeMesh({
             sheenColor="#FAF7F2"
             normalMap={normalMap}
             normalScale={new THREE.Vector2(1.05, 1.05)}
-            envMapIntensity={0.95}
+            envMapIntensity={1.05}
           />
         )}
       </mesh>

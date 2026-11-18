@@ -111,8 +111,8 @@ function SoftWord({
       const substeps = rawDt > 0.022 ? 2 : 1
       const dt = rawDt / substeps
 
-      const maxDent = pointer.down ? 7.0 : 5.2
-      const radius = 52
+      const maxDent = pointer.down ? 11.0 : 8.2
+      const radius = 66
       let anyMoving = pointer.active
 
       for (let l = 0; l < word.letters.length; l += 1) {
@@ -138,7 +138,7 @@ function SoftWord({
             const t = buf.target[i]
             const acc = ((t - u) * stiffness - v * damping) / mass
             const nextV = v + acc * dt
-            const nextU = clamp(u + nextV * dt, -2.2, 7.6)
+            const nextU = clamp(u + nextV * dt, -3.5, 13.8)
             buf.vel[i] = nextV
             buf.disp[i] = nextU
             if (step === substeps - 1) {

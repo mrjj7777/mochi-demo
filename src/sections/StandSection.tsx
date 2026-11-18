@@ -41,8 +41,8 @@ export default function StandSection({ reduced, tier }: SharedSectionProps) {
         width={meta.width}
         height={meta.height}
         alt="MOCHI milk-ceramic blob stand holding all six lip jelly shades"
-        loading="lazy"
-        decoding="async"
+        loading={reduced || tier === 'low' ? 'eager' : 'lazy'}
+        decoding={reduced || tier === 'low' ? 'sync' : 'async'}
         onError={() => {
           if (fallbackSrc !== STAND_PHOTO) setFallbackSrc(STAND_PHOTO)
         }}

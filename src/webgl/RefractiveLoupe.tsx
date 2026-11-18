@@ -81,6 +81,9 @@ export default function RefractiveLoupe({
       setWebglReady(false)
       return
     }
+    if ('drawingBufferColorSpace' in gl) {
+      ;(gl as WebGLRenderingContext & { drawingBufferColorSpace: string }).drawingBufferColorSpace = 'srgb'
+    }
 
     const vsSrc = `
       attribute vec2 aPos;
@@ -92,7 +95,7 @@ export default function RefractiveLoupe({
     `
 
     const fsSrc = `
-      precision mediump float;
+      precision highp float;
       uniform sampler2D uTex;
       uniform vec2 uCenterUv;
       uniform vec2 uSpanUv;
@@ -109,16 +112,17 @@ export default function RefractiveLoupe({
 
         // Map canvas coords so top of canvas corresponds to smaller V (image top, flipY=false)
         vec2 p = vec2(vUv.x - 0.5, 0.5 - vUv.y);
+        float boxDist = max(abs(p.x * 2.0), abs(p.y * 2.0));
         float r = length(p * 2.0);
-        float edgeMask = smoothstep(0.32, 1.25, r);
+        float edgeMask = smoothstep(0.62, 1.05, boxDist);
 
-        // Soft convex jelly cushion refraction + one-shot jelly ripple on stop
-        float ripple = sin(r * 10.0 - uWobbleTime * 16.0) * uWobble * 0.028;
-        float barrel = (0.065 * pow(r, 2.2) + ripple) * edgeMask;
+        // Crisp 1:1 center with curved jelly edge refraction + one-shot wobble ripple on stop
+        float ripple = sin(r * 10.0 - uWobbleTime * 16.0) * uWobble * 0.024;
+        float barrel = (0.048 * pow(boxDist, 2.6) + ripple * smoothstep(0.25, 1.0, r)) * (edgeMask + abs(uWobble) * 0.6);
         vec2 refracted = p * (1.0 - barrel);
 
-        // Subtle optical dispersion near outer jelly perimeter
-        vec2 caShift = normalize(p + vec2(1e-5)) * (0.0045 * edgeMask + abs(uWobble) * 0.0025);
+        // Subtle perimeter-only chromatic dispersion (zero blur/tint in the 2.0x core)
+        vec2 caShift = normalize(p + vec2(1e-5)) * (0.0032 * edgeMask + abs(uWobble) * 0.0020);
         vec2 uvBase = uCenterUv + refracted * uSpanUv;
         vec2 uvR = clamp(uvBase + caShift * uSpanUv, 0.001, 0.999);
         vec2 uvG = clamp(uvBase, 0.001, 0.999);
@@ -129,10 +133,10 @@ export default function RefractiveLoupe({
         float blue = texture2D(uTex, uvB).b;
         vec3 col = vec3(red, green, blue);
 
-        // Subtle soft daylight bevel highlight along upper-left jelly edge
-        float bevel = smoothstep(0.75, 1.0, max(abs(p.x * 2.0), abs(p.y * 2.0)));
-        float upperLeft = clamp((-p.x - p.y) * 1.15, 0.0, 1.0);
-        col += vec3(0.98, 0.96, 0.94) * bevel * upperLeft * 0.08;
+        // Crisp 2px outer glass-jelly edge sheen only along top-left perimeter
+        float rimGlint = smoothstep(0.94, 0.995, boxDist);
+        float upperLeft = clamp((-p.x - p.y) * 0.85, 0.0, 1.0);
+        col = mix(col, vec3(0.98, 0.969, 0.949), rimGlint * upperLeft * 0.16);
 
         gl_FragColor = vec4(col, 1.0);
       }
@@ -230,11 +234,15 @@ export default function RefractiveLoupe({
       gl.bindTexture(gl.TEXTURE_2D, texture)
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
       gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false)
+      gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE)
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
       texReady = true
       wake()
     }
-    img.src = imageSrc
+    const siblingImg = rootRef.current?.parentElement?.querySelector('img')
+    const resolvedSrc =
+      siblingImg?.complete && siblingImg.currentSrc ? siblingImg.currentSrc : imageSrc
+    img.src = resolvedSrc
 
     const updateSize = () => {
       const dpr = getCappedDpr()

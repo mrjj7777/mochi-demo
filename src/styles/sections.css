@@ -209,7 +209,7 @@
   width: 100%;
   height: 100svh;
   overflow: hidden;
-  background: var(--cream);
+  background: transparent;
 }
 
 .hero__media {
@@ -217,6 +217,24 @@
   inset: 0;
   z-index: 0;
   transform-origin: center center;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 72%,
+    rgba(0, 0, 0, 0.85) 79%,
+    rgba(0, 0, 0, 0.55) 86%,
+    rgba(0, 0, 0, 0.22) 93%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 72%,
+    rgba(0, 0, 0, 0.85) 79%,
+    rgba(0, 0, 0, 0.55) 86%,
+    rgba(0, 0, 0, 0.22) 93%,
+    transparent 100%
+  );
 }
 
 .hero__poster,
@@ -226,7 +244,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  background: var(--cream);
+  background: transparent;
 }
 
 .hero__poster {
@@ -245,17 +263,14 @@
   z-index: 2;
   height: 32vh;
   pointer-events: none;
-  opacity: 0.18;
+  opacity: 0.12;
   background: linear-gradient(
     to bottom,
     rgba(242, 237, 228, 0) 0%,
-    rgba(242, 237, 228, 0.05) 14%,
-    rgba(242, 237, 228, 0.16) 28%,
-    rgba(242, 237, 228, 0.36) 46%,
-    rgba(242, 237, 228, 0.62) 64%,
-    rgba(242, 237, 228, 0.84) 80%,
-    rgba(242, 237, 228, 0.96) 92%,
-    #F2EDE4 100%
+    rgba(242, 237, 228, 0.22) 34%,
+    rgba(242, 237, 228, 0.42) 60%,
+    rgba(242, 237, 228, 0.16) 84%,
+    transparent 100%
   );
 }
 
@@ -484,6 +499,7 @@
 
 .squeeze__callout {
   position: absolute;
+  width: fit-content;
   color: var(--ink);
   white-space: nowrap;
 }
@@ -676,31 +692,31 @@
   -webkit-mask-image: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(0, 0, 0, 0.04) 4%,
-    rgba(0, 0, 0, 0.16) 9%,
-    rgba(0, 0, 0, 0.42) 14%,
-    rgba(0, 0, 0, 0.76) 19%,
-    #000 24vh,
-    #000 calc(100% - 24vh),
-    rgba(0, 0, 0, 0.76) calc(100% - 19%),
-    rgba(0, 0, 0, 0.42) calc(100% - 14%),
-    rgba(0, 0, 0, 0.16) calc(100% - 9%),
-    rgba(0, 0, 0, 0.04) calc(100% - 4%),
+    rgba(0, 0, 0, 0.05) 6%,
+    rgba(0, 0, 0, 0.2) 12%,
+    rgba(0, 0, 0, 0.48) 19%,
+    rgba(0, 0, 0, 0.8) 26%,
+    #000 32%,
+    #000 68%,
+    rgba(0, 0, 0, 0.8) 74%,
+    rgba(0, 0, 0, 0.48) 81%,
+    rgba(0, 0, 0, 0.2) 88%,
+    rgba(0, 0, 0, 0.05) 94%,
     transparent 100%
   );
   mask-image: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(0, 0, 0, 0.04) 4%,
-    rgba(0, 0, 0, 0.16) 9%,
-    rgba(0, 0, 0, 0.42) 14%,
-    rgba(0, 0, 0, 0.76) 19%,
-    #000 24vh,
-    #000 calc(100% - 24vh),
-    rgba(0, 0, 0, 0.76) calc(100% - 19%),
-    rgba(0, 0, 0, 0.42) calc(100% - 14%),
-    rgba(0, 0, 0, 0.16) calc(100% - 9%),
-    rgba(0, 0, 0, 0.04) calc(100% - 4%),
+    rgba(0, 0, 0, 0.05) 6%,
+    rgba(0, 0, 0, 0.2) 12%,
+    rgba(0, 0, 0, 0.48) 19%,
+    rgba(0, 0, 0, 0.8) 26%,
+    #000 32%,
+    #000 68%,
+    rgba(0, 0, 0, 0.8) 74%,
+    rgba(0, 0, 0, 0.48) 81%,
+    rgba(0, 0, 0, 0.2) 88%,
+    rgba(0, 0, 0, 0.05) 94%,
     transparent 100%
   );
 }
@@ -731,6 +747,10 @@
   color: var(--ink);
   white-space: nowrap;
   pointer-events: none;
+}
+
+.texture__readout--flip {
+  transform: translate(calc(-100% - 124px), -50%);
 }
 
 .texture__line {
@@ -920,6 +940,18 @@
   width: 100%;
 }
 
+@media (min-width: 701px) {
+  .lookbook--stack .lookbook__track {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  .lookbook--stack .lookbook__frame {
+    padding-bottom: 16px;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* 9. Stand Section                                                    */
 /* ------------------------------------------------------------------ */
@@ -1084,7 +1116,7 @@
 /* ------------------------------------------------------------------ */
 .wallpapers {
   min-height: 104svh;
-  padding: 104px 0 88px;
+  padding: 104px 0 clamp(112px, 14vh, 180px);
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -1367,17 +1399,9 @@
 }
 
 /* ------------------------------------------------------------------ */
-/* Mobile Breakpoint (<= 700px)                                        */
+/* Portrait & Mobile Hero 16:9 Band (<= 700px or portrait <= 11/10)    */
 /* ------------------------------------------------------------------ */
-@media (max-width: 700px) {
-  .site-header {
-    top: 12px;
-  }
-
-  .site-header__nav {
-    gap: 12px;
-  }
-
+@media (max-width: 700px), (max-aspect-ratio: 11/10) {
   .hero__poster,
   .hero__canvas {
     top: 50%;
@@ -1387,33 +1411,49 @@
     height: auto;
     aspect-ratio: 16 / 9;
     transform: translateY(-50%);
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0, 0, 0, 0.28) 7%,
+      rgba(0, 0, 0, 0.76) 13%,
+      #000 18%,
+      #000 82%,
+      rgba(0, 0, 0, 0.76) 87%,
+      rgba(0, 0, 0, 0.28) 93%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0, 0, 0, 0.28) 7%,
+      rgba(0, 0, 0, 0.76) 13%,
+      #000 18%,
+      #000 82%,
+      rgba(0, 0, 0, 0.76) 87%,
+      rgba(0, 0, 0, 0.28) 93%,
+      transparent 100%
+    );
   }
 
   .hero__mobile-fades {
-    position: absolute;
-    z-index: 2;
-    left: 0;
-    right: 0;
-    top: 50%;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    transform: translateY(-50%);
-    pointer-events: none;
-    background: linear-gradient(
-      to bottom,
-      var(--cream) 0%,
-      rgba(242, 237, 228, 0.72) 7%,
-      rgba(242, 237, 228, 0.24) 13%,
-      transparent 18%,
-      transparent 82%,
-      rgba(242, 237, 228, 0.24) 87%,
-      rgba(242, 237, 228, 0.72) 93%,
-      var(--cream) 100%
-    );
+    display: none;
   }
 
   .hero__headline-mask {
     top: clamp(76px, 13vh, 118px);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Mobile Breakpoint (<= 700px)                                        */
+/* ------------------------------------------------------------------ */
+@media (max-width: 700px) {
+  .site-header {
+    top: 12px;
+  }
+
+  .site-header__nav {
+    gap: 12px;
   }
 
   .hero__headline {
@@ -1438,16 +1478,18 @@
   }
 
   .squeeze__stage {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto auto;
+    align-items: center;
     padding-top: 84px;
     padding-bottom: 56px;
-    gap: 20px;
+    gap: 18px 12px;
   }
 
   .squeeze__heading-wrap {
-    order: 1;
+    grid-column: 1 / -1;
+    grid-row: 1;
     text-align: left;
   }
 
@@ -1455,35 +1497,55 @@
     font-size: clamp(30px, 9.6vw, 44px);
   }
 
-  .squeeze__product {
-    order: 3;
-    width: 66vw;
-    height: 44vh;
-    margin: 0 auto;
-  }
-
   .squeeze__callouts {
-    order: 2;
-    position: relative;
-    inset: auto;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px 16px;
+    display: contents;
   }
 
   .squeeze__callout {
     position: relative;
     inset: auto;
-    white-space: normal;
+    width: fit-content;
+    white-space: nowrap;
   }
 
-  .squeeze__callout--top.squeeze__callout--left,
-  .squeeze__callout--bottom.squeeze__callout--left,
-  .squeeze__callout--top.squeeze__callout--right,
-  .squeeze__callout--bottom.squeeze__callout--right {
+  .squeeze__callout--top.squeeze__callout--left {
+    grid-column: 1 / 2;
+    grid-row: 2;
+    justify-self: start;
     top: auto;
+    left: auto;
+  }
+
+  .squeeze__callout--top.squeeze__callout--right {
+    grid-column: 2 / 3;
+    grid-row: 2;
+    justify-self: end;
+    top: auto;
+    right: auto;
+  }
+
+  .squeeze__product {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-self: center;
+    width: 58vw;
+    height: 42vh;
+    margin: 4px auto;
+  }
+
+  .squeeze__callout--bottom.squeeze__callout--left {
+    grid-column: 1 / 2;
+    grid-row: 4;
+    justify-self: start;
     bottom: auto;
     left: auto;
+  }
+
+  .squeeze__callout--bottom.squeeze__callout--right {
+    grid-column: 2 / 3;
+    grid-row: 4;
+    justify-self: end;
+    bottom: auto;
     right: auto;
   }
 
@@ -1522,6 +1584,12 @@
     height: 156px;
   }
 
+  .texture__readout,
+  .texture__readout--flip {
+    transform: translate(-50%, 124px);
+    text-align: center;
+  }
+
   .lookbook__title-top {
     font-size: clamp(32px, 10vw, 48px);
   }
@@ -1552,7 +1620,7 @@
   }
 
   .wallpapers {
-    padding: 84px 0 72px;
+    padding: 84px 0 clamp(96px, 12vh, 140px);
   }
 
   .wallpapers__header {
