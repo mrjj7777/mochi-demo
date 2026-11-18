@@ -1,0 +1,15 @@
+.belief__char,
+.belief__punctuation {
+  display: inline-block;
+}
+
+.belief__char {
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .belief__char {
+    will-change: auto;
+  }
+}
