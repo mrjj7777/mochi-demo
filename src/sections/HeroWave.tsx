@@ -343,7 +343,7 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
             canvasWrapRef.current.style.transform = `scale(${s.toFixed(4)})`
           }
           if (dissolveRef.current) {
-            dissolveRef.current.style.opacity = (0.12 + exitT * 0.68).toFixed(3)
+            dissolveRef.current.style.opacity = (0.12 + exitT * 0.48).toFixed(3)
             dissolveRef.current.style.transform = `translate3d(0, ${((1 - exitT) * 20).toFixed(1)}%, 0)`
           }
           if (scrollCueRef.current) {
@@ -367,24 +367,26 @@ export default function HeroWave({ onJump, reduced }: HeroWaveProps) {
       data-aura="#F2EDE4,#F6D3D6"
     >
       <div ref={pinRef} className="hero__pin">
-        <div ref={canvasWrapRef} className="hero__media">
-          <img
-            className="hero__poster"
-            src="/media/hero-seq/poster.webp"
-            width={1600}
-            height={900}
-            alt="Six MOCHI lip jelly tubes standing in a row"
-            decoding="async"
-            fetchPriority="high"
-          />
-          {!reduced && (
-            <canvas
-              ref={canvasRef}
-              className="hero__canvas"
-              aria-label="MOCHI lip jelly wave sequence"
+        <div className="hero__media-mask">
+          <div ref={canvasWrapRef} className="hero__media">
+            <img
+              className="hero__poster"
+              src="/media/hero-seq/poster.webp"
+              width={1600}
+              height={900}
+              alt="Six MOCHI lip jelly tubes standing in a row"
+              decoding="async"
+              fetchPriority="high"
             />
-          )}
-          {isMobile && <div className="hero__mobile-fades" aria-hidden="true" />}
+            {!reduced && (
+              <canvas
+                ref={canvasRef}
+                className="hero__canvas"
+                aria-label="MOCHI lip jelly wave sequence"
+              />
+            )}
+            {isMobile && <div className="hero__mobile-fades" aria-hidden="true" />}
+          </div>
         </div>
 
         {/* Smooth 30vh multi-stop cream dissolve into #belief (zero seam ΔE <= 1.5) */}

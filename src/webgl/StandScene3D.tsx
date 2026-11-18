@@ -246,10 +246,7 @@ function StandStage({ active, tier, isActive, onHoverFlavour }: StandInnerProps)
         const pos = rb.translation()
         const vel = rb.linvel()
         const settledY = WELL_FLOOR_Y + 1.50
-        // Safety guard: if a tube stalled above its well (e.g. heavy frame hitch), guide it cleanly down
         if (wallElapsed > i * 0.085 + 0.65 && pos.y > settledY + 0.05 && Math.abs(vel.y) < 0.14) {
-          rb.setTranslation({ x: SLOT_XS[i], y: pos.y, z: spineZAt(SLOT_XS[i]) }, true)
-          rb.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true)
           rb.setLinvel({ x: 0, y: Math.min(vel.y, -2.5), z: 0 }, true)
           rb.wakeUp()
         }
@@ -325,21 +322,17 @@ function StandStage({ active, tier, isActive, onHoverFlavour }: StandInnerProps)
         </mesh>
       ))}
 
-      <Physics gravity={[0, -15, 0]} paused={!isActive || !active} timeStep={1 / 60}>
-        {/* Fixed stand slot floors & low-profile slippery pocket guides (1 RigidBody total) */}
-        <RigidBody type="fixed" colliders={false} restitution={0.22} friction={0.18}>
+      <Physics gravity={[0, -16, 0]} paused={!isActive || !active} timeStep="vary">
+        {/* Fixed stand slot well floors (1 RigidBody total; vertical slot guides keep tubes aligned) */}
+        <RigidBody type="fixed" colliders={false} restitution={0.26} friction={0.4}>
           {SLOT_XS.map((sx, idx) => {
             const sz = spineZAt(sx)
             return (
-              <group key={`slot-col-${idx}`}>
-                {/* Thick slot bottom floor prevents high-velocity tunneling */}
-                <CuboidCollider args={[0.54, 0.36, 0.50]} position={[sx, WELL_FLOOR_Y - 0.36, sz]} />
-                {/* Low-profile pocket rim guides inside the ceramic well (top <= 0.50, zero high lip to snag on) */}
-                <CuboidCollider args={[0.06, 0.14, 0.52]} position={[sx - 0.56, WELL_FLOOR_Y + 0.14, sz]} />
-                <CuboidCollider args={[0.06, 0.14, 0.52]} position={[sx + 0.56, WELL_FLOOR_Y + 0.14, sz]} />
-                <CuboidCollider args={[0.56, 0.14, 0.06]} position={[sx, WELL_FLOOR_Y + 0.14, sz - 0.50]} />
-                <CuboidCollider args={[0.56, 0.14, 0.06]} position={[sx, WELL_FLOOR_Y + 0.14, sz + 0.50]} />
-              </group>
+              <CuboidCollider
+                key={`slot-col-${idx}`}
+                args={[0.50, 0.36, 0.46]}
+                position={[sx, WELL_FLOOR_Y - 0.36, sz]}
+              />
             )
           })}
         </RigidBody>
@@ -359,13 +352,13 @@ function StandStage({ active, tier, isActive, onHoverFlavour }: StandInnerProps)
               canSleep
               ccd
               gravityScale={releasedRef.current[i] ? 1 : 0}
-              position={[sx, TUBE_START_Y + i * 0.28, sz]}
+              position={[sx, TUBE_START_Y + i * 0.24, sz]}
               rotation={[0, 0, 0]}
-              linearDamping={0.45}
-              angularDamping={3.2}
-              enabledRotations={[true, false, true]}
-              restitution={0.22}
-              friction={0.45}
+              linearDamping={0.35}
+              enabledTranslations={[false, true, false]}
+              enabledRotations={[false, false, false]}
+              restitution={0.26}
+              friction={0.4}
               onCollisionEnter={() => {
                 if (!landedRef.current[i]) {
                   landedRef.current[i] = true
