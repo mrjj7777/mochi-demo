@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { clamp, createSpring } from '../physics/spring'
-import { canUseWebGL, getCappedDpr, useViewportActive } from './webglUtils'
+import { canUseWebGL, getCappedDpr, useViewportActive } from './viewportUtils'
 
 export type RefractiveLoupeProps = {
   imageSrc: string

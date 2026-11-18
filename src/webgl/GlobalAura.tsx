@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { clamp, hexToRgb, lerpRgb } from '../physics/spring'
-import { getCappedDpr } from './webglUtils'
+import { getCappedDpr } from './viewportUtils'
 
 export type GlobalAuraProps = {
   activeAura?: string
