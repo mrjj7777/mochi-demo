@@ -3,8 +3,10 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import Lenis from 'lenis'
-import { flavours, wallpaperFileSize, type Flavour } from './brand'
+import { flavours, type Flavour } from './brand'
 import PhysicsBelief from './components/Belief'
+import BlobjectShowcase from './components/BlobjectShowcase'
+import CampaignLoopGallery, { type GalleryItem } from './components/CampaignLoopGallery'
 import GlobalAuraCanvas from './components/GlobalAura'
 import PhysicsHero from './components/Hero'
 import { PointerHistory, clamp, createSpring, projectMomentum, rubberBand } from './physics'
@@ -23,11 +25,9 @@ function Preloader({ done, onDone }: { done: boolean; onDone: () => void }) {
       '/media/hero-seq-v4/poster.webp',
       '/media/cutouts/mochi-cherry.webp',
       '/media/photos/mochi-peach-model.webp',
+      '/media/campaigns/blobject-form.webp',
+      '/media/campaigns/pink-noise.webp',
       '/media/photos/mochi-model-1.webp',
-      '/media/photos/mochi-model-2.webp',
-      '/media/photos/mochi-model-3.webp',
-      '/media/photos/mochi-model-4.webp',
-      '/media/photos/mochi-model-5.webp',
     ]
     let complete = 0
     const finish = () => {
@@ -40,7 +40,7 @@ function Preloader({ done, onDone }: { done: boolean; onDone: () => void }) {
       image.onerror = finish
       image.src = source
     })
-    const cap = window.setTimeout(() => setAssetsReady(true), 900)
+    const cap = window.setTimeout(() => setAssetsReady(true), 850)
     return () => {
       complete = sources.length
       window.clearTimeout(cap)
@@ -85,7 +85,8 @@ function Header({ bag, onJump }: { bag: number; onJump: (id: string) => void }) 
         >
           FLAVOURS
         </button>
-        <button onClick={() => onJump('wallpapers')}>WALLPAPERS</button>
+        <button onClick={() => onJump('blobject')}>FORM</button>
+        <button onClick={() => onJump('wallpapers')}>ARCHIVE</button>
         <span className="bag" aria-label={`bag ${bag}`}>
           BAG ({bag})
         </span>
@@ -149,9 +150,9 @@ function Flavours({ bag, setBag }: { bag: number; setBag: (value: number) => voi
           if (word) {
             gsap.fromTo(
               word,
-              { xPercent: -9 },
+              { xPercent: -8 },
               {
-                xPercent: 9,
+                xPercent: 8,
                 ease: 'none',
                 scrollTrigger: {
                   trigger: panel,
@@ -338,7 +339,7 @@ function Texture() {
 
 const STACK_TILTS = [-2.4, 1.9, -1.4, 2.2, -1.8, 0]
 
-function Lookbook({ onOpen, reduced }: { onOpen: (src: string, flavour: Flavour) => void; reduced: boolean }) {
+function Lookbook({ onOpen, reduced }: { onOpen: (src: string, title: string) => void; reduced: boolean }) {
   const sectionRef = useRef<HTMLElement>(null)
   const pinRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -394,7 +395,7 @@ function Lookbook({ onOpen, reduced }: { onOpen: (src: string, flavour: Flavour)
                 type="button"
                 key={src}
                 className="lookbook__static-card"
-                onClick={() => onOpen(`/media/photos/${src}`, item)}
+                onClick={() => onOpen(`/media/photos/${src}`, item.name)}
                 aria-label={`Open ${item.name} lookbook photograph`}
               >
                 <img src={`/media/photos/${src}`} alt={`${item.name} lookbook`} loading="eager" decoding="async" />
@@ -440,7 +441,7 @@ function Lookbook({ onOpen, reduced }: { onOpen: (src: string, flavour: Flavour)
                       pointerEvents: isCurrent ? 'auto' : 'none',
                     } as React.CSSProperties
                   }
-                  onClick={() => onOpen(`/media/photos/${src}`, item)}
+                  onClick={() => onOpen(`/media/photos/${src}`, item.name)}
                   tabIndex={isCurrent ? 0 : -1}
                   aria-label={`Open ${item.name} lookbook photograph`}
                 >
@@ -555,70 +556,6 @@ function Stand() {
   )
 }
 
-function AllSix({ reduced }: { reduced: boolean }) {
-  const [nudged, setNudged] = useState(false)
-  return (
-    <section id="all-six" className="all-six section" data-aura="#E46A8E,#F2B632">
-      <div className="all-six__copy">
-        <p className="display">all six.</p>
-        <p>
-          can&apos;t pick? <em>don&apos;t.</em>
-        </p>
-      </div>
-      <button
-        type="button"
-        className={`pile ${reduced ? 'pile--static' : ''} ${nudged ? 'pile--nudged' : ''}`}
-        onClick={() => setNudged(!nudged)}
-        aria-label="all six MOCHI shades"
-      >
-        <img
-          className="pile__image"
-          src="/media/photos/mochi-all-pile.webp"
-          alt="All six MOCHI lip jelly shades"
-          loading="lazy"
-          decoding="async"
-        />
-      </button>
-    </section>
-  )
-}
-
-function Wallpapers({ onOpen }: { onOpen: (index: number) => void }) {
-  return (
-    <section id="wallpapers" className="wallpapers section" data-aura="#2346B8,#F2EDE4">
-      <p className="display">take the colour home.</p>
-      <div className="wallpaper-fan">
-        {flavours.map((item, index) => (
-          <article
-            className="wallpaper-card"
-            key={item.key}
-            style={{ '--jelly': item.jelly, '--aura': item.aura, '--i': index } as React.CSSProperties}
-          >
-            <button
-              type="button"
-              className="wallpaper-card__open"
-              onClick={() => onOpen(index)}
-              aria-label={`Preview ${item.name} wallpaper`}
-            >
-              <div
-                className="wallpaper-card__aura"
-                style={{ backgroundImage: `url(/media/cutouts/mochi-${item.asset}-aura.webp)` }}
-              />
-            </button>
-            <a
-              className="download-pill"
-              href={`/media/wallpapers/mochi-${item.asset}-${wallpaperFileSize}.png`}
-              download
-            >
-              ↓ DOWNLOAD
-            </a>
-          </article>
-        ))}
-      </div>
-    </section>
-  )
-}
-
 function Footer() {
   return (
     <footer className="footer section" data-aura="#2346B8,#B3122E">
@@ -637,41 +574,47 @@ function Footer() {
   )
 }
 
-function WallpaperPreview({
-  index,
+function GalleryModal({
+  state,
   onClose,
   onChange,
 }: {
-  index: number | null
+  state: { items: GalleryItem[]; index: number } | null
   onClose: () => void
-  onChange: (next: number) => void
+  onChange: (nextIndex: number) => void
 }) {
   const startX = useRef<number | null>(null)
   useEffect(() => {
-    if (index === null) return
+    if (!state) return
     const keydown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
-      if (event.key === 'ArrowRight') onChange((index + 1) % flavours.length)
-      if (event.key === 'ArrowLeft') onChange((index + flavours.length - 1) % flavours.length)
+      if (event.key === 'ArrowRight') onChange((state.index + 1) % state.items.length)
+      if (event.key === 'ArrowLeft') onChange((state.index + state.items.length - 1) % state.items.length)
     }
     window.addEventListener('keydown', keydown)
     return () => window.removeEventListener('keydown', keydown)
-  }, [index, onChange, onClose])
-  if (index === null) return null
-  const item = flavours[index]
+  }, [state, onChange, onClose])
+
+  if (!state) return null
+  const item = state.items[state.index]
+
   return (
     <div
       className="wallpaper-preview"
       role="dialog"
       aria-modal="true"
-      aria-label={`${item.name} wallpaper preview`}
+      aria-label={item.title}
       onClick={onClose}
       onPointerDown={event => {
         startX.current = event.clientX
       }}
       onPointerUp={event => {
         if (startX.current !== null && Math.abs(event.clientX - startX.current) > 42) {
-          onChange(event.clientX < startX.current ? (index + 1) % flavours.length : (index + flavours.length - 1) % flavours.length)
+          onChange(
+            event.clientX < startX.current
+              ? (state.index + 1) % state.items.length
+              : (state.index + state.items.length - 1) % state.items.length,
+          )
         }
         startX.current = null
       }}
@@ -684,27 +627,27 @@ function WallpaperPreview({
         className="wallpaper-preview__arrow wallpaper-preview__arrow--prev"
         onClick={event => {
           event.stopPropagation()
-          onChange((index + flavours.length - 1) % flavours.length)
+          onChange((state.index + state.items.length - 1) % state.items.length)
         }}
-        aria-label="Previous wallpaper"
+        aria-label="Previous"
       >
         ←
       </button>
-      <img src={`/media/wallpapers/mochi-${item.asset}-${wallpaperFileSize}.png`} alt={`${item.name} MOCHI wallpaper`} />
+      <img src={item.src} alt={item.alt} />
       <button
         type="button"
         className="wallpaper-preview__arrow wallpaper-preview__arrow--next"
         onClick={event => {
           event.stopPropagation()
-          onChange((index + 1) % flavours.length)
+          onChange((state.index + 1) % state.items.length)
         }}
-        aria-label="Next wallpaper"
+        aria-label="Next"
       >
         →
       </button>
       <a
         className="wallpaper-preview__download"
-        href={`/media/wallpapers/mochi-${item.asset}-${wallpaperFileSize}.png`}
+        href={item.downloadSrc}
         download
         onClick={event => event.stopPropagation()}
       >
@@ -714,7 +657,7 @@ function WallpaperPreview({
   )
 }
 
-function Lightbox({ data, onClose }: { data: { src: string; flavour: Flavour } | null; onClose: () => void }) {
+function Lightbox({ data, onClose }: { data: { src: string; title: string } | null; onClose: () => void }) {
   useEffect(() => {
     if (!data) return
     const close = (event: KeyboardEvent) => {
@@ -731,7 +674,7 @@ function Lightbox({ data, onClose }: { data: { src: string; flavour: Flavour } |
       </button>
       <img
         src={data.src}
-        alt={`${data.flavour.name} lip jelly`}
+        alt={data.title}
         decoding="async"
         onError={event => {
           event.currentTarget.style.display = 'none'
@@ -745,8 +688,8 @@ function App() {
   const [loaded, setLoaded] = useState(false)
   const [bag, setBag] = useState(0)
   const [reduced, setReduced] = useState(false)
-  const [lightbox, setLightbox] = useState<{ src: string; flavour: Flavour } | null>(null)
-  const [wallpaper, setWallpaper] = useState<number | null>(null)
+  const [lightbox, setLightbox] = useState<{ src: string; title: string } | null>(null)
+  const [galleryModal, setGalleryModal] = useState<{ items: GalleryItem[]; index: number } | null>(null)
   const [flavour, setFlavour] = useState(flavours[0])
   const context = useMemo(() => ({ flavour, setFlavour }), [flavour])
 
@@ -784,12 +727,14 @@ function App() {
   useEffect(() => {
     if (loaded) {
       document.body.classList.add('is-ready')
-      window.setTimeout(() => ScrollTrigger.refresh(), 120)
+      window.setTimeout(() => ScrollTrigger.refresh(), 140)
     }
   }, [loaded])
 
   const jump = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' })
+    const el = document.getElementById(id)
+    const target = el?.closest('.pin-spacer') || el
+    target?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' })
   }
 
   return (
@@ -803,15 +748,22 @@ function App() {
           <PhysicsBelief />
           <Flavours bag={bag} setBag={setBag} />
           <Texture />
-          <Lookbook reduced={reduced} onOpen={(src, item) => setLightbox({ src, flavour: item })} />
+          <BlobjectShowcase reduced={reduced} onOpen={(src, title) => setLightbox({ src, title })} />
+          <Lookbook reduced={reduced} onOpen={(src, title) => setLightbox({ src, title })} />
           <Stand />
-          <AllSix reduced={reduced} />
-          <Wallpapers onOpen={setWallpaper} />
+          <CampaignLoopGallery
+            reduced={reduced}
+            onOpenItem={(items, index) => setGalleryModal({ items, index })}
+          />
         </main>
         <Footer />
       </div>
       <Lightbox data={lightbox} onClose={() => setLightbox(null)} />
-      <WallpaperPreview index={wallpaper} onClose={() => setWallpaper(null)} onChange={setWallpaper} />
+      <GalleryModal
+        state={galleryModal}
+        onClose={() => setGalleryModal(null)}
+        onChange={nextIndex => setGalleryModal(prev => (prev ? { ...prev, index: nextIndex } : null))}
+      />
     </FlavourContext.Provider>
   )
 }
