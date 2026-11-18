@@ -1,17 +1,18 @@
 .mochi-hero {
   position: relative;
   min-height: 100svh;
-  background: var(--cream, #f4efe7);
-  color: var(--ink, #1b1b1b);
+  background: var(--cream, #F2EDE4);
+  color: var(--ink, #141414);
   isolation: isolate;
 }
+
 .mochi-hero__pin {
   position: relative;
   width: 100%;
   height: 100svh;
-  min-height: 620px;
+  min-height: 580px;
   overflow: hidden;
-  background: var(--cream, #f4efe7);
+  background: var(--cream, #F2EDE4);
   isolation: isolate;
 }
 
@@ -22,182 +23,106 @@
   display: block;
   width: 100%;
   height: 100%;
-  background: var(--cream, #f4efe7);
   object-fit: cover;
   object-position: center;
+  background: var(--cream, #F2EDE4);
 }
 
 .mochi-hero__poster {
   z-index: 0;
+  filter: contrast(1.06) saturate(1.1) brightness(0.96);
+  transform: scale(1.012);
 }
 
 .mochi-hero__canvas {
   z-index: 1;
+  filter: contrast(1.06) saturate(1.1) brightness(0.96);
+  opacity: 0;
+  transition: opacity 280ms ease;
 }
 
-.mochi-hero__mobile-fade {
-  display: none;
+.mochi-hero__pin.is-ready .mochi-hero__canvas {
+  opacity: 1;
+}
+
+/* Subtle cinematic film grade — keeps bottom-right corner completely free */
+.mochi-hero__grade {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(255, 244, 236, 0.05), transparent 56%),
+    linear-gradient(
+      180deg,
+      rgba(26, 16, 22, 0.1) 0%,
+      transparent 20%,
+      transparent 78%,
+      rgba(242, 237, 228, 0.42) 100%
+    );
 }
 
 .mochi-hero__headline {
   position: absolute;
   z-index: 3;
-  top: 14.5svh;
+  top: 12svh;
   left: 50%;
-  width: min(92vw, 1020px);
-  color: var(--ink, #1b1b1b);
+  width: min(92vw, 1080px);
+  color: var(--ink, #141414);
   text-align: center;
   pointer-events: none;
   opacity: var(--hero-headline-progress, 0);
   clip-path: inset(calc((1 - var(--hero-headline-progress, 0)) * 100%) 0 0 0);
-  transform: translate3d(0, calc((1 - var(--hero-headline-progress, 0)) * 1.5rem), 0);
+  transform: translate3d(-50%, calc((1 - var(--hero-headline-progress, 0)) * 1.4rem), 0);
   transform-origin: center top;
-  transition: opacity 160ms linear;
-  translate: -50% 0;
+  will-change: transform, opacity, clip-path;
 }
 
 .mochi-hero__headline span,
 .mochi-hero__headline em {
   font-family: var(--display, 'Krona One', sans-serif);
-  font-size: clamp(2.8rem, 6.9vw, 7.2rem);
+  font-size: clamp(2.6rem, 6.4vw, 6.8rem);
   font-weight: 400;
-  letter-spacing: -0.075em;
-  line-height: 0.9;
+  letter-spacing: -0.055em;
+  line-height: 0.92;
 }
 
 .mochi-hero__headline em {
+  margin-left: 0.14em;
   font-family: var(--emotion, 'Instrument Serif', Georgia, serif);
-  font-size: 1.15em;
+  font-size: clamp(3.1rem, 7.6vw, 8rem);
   font-style: italic;
-  letter-spacing: -0.04em;
-}
-
-.mochi-hero__mono {
-  position: absolute;
-  z-index: 3;
-  left: clamp(1.25rem, 3vw, 3.5rem);
-  bottom: max(1.4rem, env(safe-area-inset-bottom));
-  margin: 0;
-  color: var(--ink, #1b1b1b);
-  font-family: var(--micro, 'Geist Mono', monospace);
-  font-size: 0.62rem;
-  letter-spacing: 0.14em;
-  line-height: 1;
-  text-transform: uppercase;
-  pointer-events: none;
+  letter-spacing: -0.02em;
 }
 
 .mochi-hero__scroll-cue {
   position: absolute;
   z-index: 3;
-  right: 50%;
-  bottom: max(1.35rem, env(safe-area-inset-bottom));
+  left: 50%;
+  bottom: max(1.6rem, env(safe-area-inset-bottom));
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  width: 4.5rem;
-  height: 1.8rem;
-  padding: 0;
-  border: 1px solid color-mix(in srgb, var(--ink, #1b1b1b) 38%, transparent);
-  border-radius: 999px;
+  gap: 8px;
+  padding: 10px 0 0;
+  border: 0;
+  border-top: 1px solid rgba(20, 20, 20, 0.36);
   background: transparent;
-  color: var(--ink, #1b1b1b);
-  font-family: var(--micro, 'Geist Mono', monospace);
-  font-size: 0.56rem;
-  letter-spacing: 0.11em;
+  color: var(--ink, #141414);
+  font-family: var(--micro, 'Geist Mono Variable', monospace);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
   line-height: 1;
   text-transform: uppercase;
-  transform: translateX(50%);
+  transform: translateX(-50%);
+  opacity: var(--hero-cue-opacity, 1);
   cursor: pointer;
 }
 
-.mochi-hero__scroll-cue::after {
-  content: '';
-  position: absolute;
-  bottom: -0.65rem;
-  left: 50%;
-  width: 1px;
-  height: 0.45rem;
-  background: currentColor;
-  transform: translateX(-50%);
-}
-
-.mochi-hero__scroll-cue:focus-visible,
-.mochi-hero__hotspot:focus-visible {
+.mochi-hero__scroll-cue:focus-visible {
   outline: 1px solid currentColor;
-  outline-offset: 4px;
-}
-
-.mochi-hero__hotspots {
-  position: absolute;
-  z-index: 3;
-  inset: 0;
-  pointer-events: none;
-}
-
-.mochi-hero__hotspot {
-  position: absolute;
-  display: block;
-  width: 1.25rem;
-  height: 8rem;
-  padding: 0;
-  border: 0;
-  border-left: 1px solid color-mix(in srgb, var(--ink, #1b1b1b) 45%, transparent);
-  background: transparent;
-  color: var(--ink, #1b1b1b);
-  opacity: var(--hero-hotspot-progress, 1);
-  pointer-events: auto;
-  cursor: crosshair;
-  transform: translateX(-50%);
-}
-
-.mochi-hero__hotspot::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -3px;
-  width: 5px;
-  height: 5px;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  background: var(--cream, #f4efe7);
-}
-
-.mochi-hero__hotspot span {
-  position: absolute;
-  top: -1.35rem;
-  left: 0.55rem;
-  white-space: nowrap;
-  font-family: var(--micro, 'Geist Mono', monospace);
-  font-size: 0.52rem;
-  letter-spacing: 0.08em;
-  opacity: 0;
-  transform: translateY(0.4rem);
-  transition: opacity 160ms ease, transform 160ms ease;
-}
-
-.mochi-hero__hotspot:hover span,
-.mochi-hero__hotspot:focus-visible span {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.mochi-hero__hotspot--1 { top: 45%; left: 13%; }
-.mochi-hero__hotspot--2 { top: 40%; left: 28%; }
-.mochi-hero__hotspot--3 { top: 46%; left: 42%; }
-.mochi-hero__hotspot--4 { top: 43%; left: 57%; }
-.mochi-hero__hotspot--5 { top: 48%; left: 71%; }
-.mochi-hero__hotspot--6 { top: 42%; left: 84%; }
-
-.mochi-hero--reduced .mochi-hero__headline {
-  opacity: 1;
-  clip-path: inset(0);
-  transform: translate3d(0, 0, 0);
-}
-
-.mochi-hero--reduced .mochi-hero__hotspots,
-.mochi-hero--reduced .mochi-hero__scroll-cue {
-  display: none;
+  outline-offset: 6px;
 }
 
 @media (max-width: 700px) {
@@ -205,67 +130,19 @@
     min-height: 100svh;
   }
 
-  .mochi-hero__poster,
-  .mochi-hero__canvas {
-    inset: 50% 0 auto;
-    width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 9;
-    object-fit: cover;
-    object-position: center;
-    transform: translateY(-50%);
-  }
-
-  .mochi-hero__mobile-fade {
-    position: absolute;
-    z-index: 2;
-    display: block;
-    pointer-events: none;
-  }
-
-  .mochi-hero__mobile-fade--top {
-    top: calc(50% - 28.125vw);
-    left: 0;
-    width: 100%;
-    height: 10.125vw;
-    background: linear-gradient(to bottom, var(--cream, #f4efe7), transparent);
-  }
-
-  .mochi-hero__mobile-fade--bottom {
-    top: calc(50% + 18vw);
-    left: 0;
-    width: 87%;
-    height: 10.125vw;
-    background: linear-gradient(to bottom, transparent, var(--cream, #f4efe7));
-  }
-
   .mochi-hero__headline {
-    top: 12svh;
+    top: 11svh;
     width: calc(100% - 2rem);
   }
 
   .mochi-hero__headline span,
   .mochi-hero__headline em {
-    font-size: clamp(2.15rem, 11.2vw, 4.2rem);
-  }
-
-  .mochi-hero__mono {
-    bottom: max(2.7rem, calc(env(safe-area-inset-bottom) + 1.4rem));
-    left: 1rem;
-    max-width: calc(100% - 7rem);
-    font-size: 0.55rem;
-    line-height: 1.25;
+    font-size: clamp(2rem, 10.5vw, 3.8rem);
   }
 
   .mochi-hero__scroll-cue {
-    right: auto;
-    left: 50%;
-    bottom: max(2.45rem, calc(env(safe-area-inset-bottom) + 1.4rem));
-    transform: translateX(-50%);
-  }
-
-  .mochi-hero__hotspots {
-    display: none;
+    bottom: max(1.8rem, env(safe-area-inset-bottom));
+    font-size: 10px;
   }
 }
 
@@ -273,77 +150,10 @@
   .mochi-hero__headline {
     opacity: 1;
     clip-path: inset(0);
-    transform: translate3d(0, 0, 0);
-    transition: none;
+    transform: translate3d(-50%, 0, 0);
   }
 
-  .mochi-hero__scroll-cue,
-  .mochi-hero__hotspots {
+  .mochi-hero__scroll-cue {
     display: none;
   }
-}
-
-/* Source-of-truth presentation lock. The Wave stays full-screen and carries only typography. */
-.mochi-hero__scroll-cue {
-  width: auto;
-  height: auto;
-  min-width: 0;
-  border: 0;
-  border-radius: 0;
-  font-size: 12px;
-  letter-spacing: .14em;
-  transform: translateX(-50%);
-}
-.mochi-hero__mono { font-size: 12px; }
-.mochi-hero__scroll-cue::after,
-.mochi-hero__hotspots { display: none; }
-.mochi-hero__headline { transition: none; }
-
-@media (max-width: 700px) {
-  .mochi-hero__scroll-cue {
-    left: auto;
-    right: 1rem;
-    bottom: max(2.45rem, calc(env(safe-area-inset-bottom) + 1.4rem));
-    transform: none;
-  }
-
-  .mochi-hero__mono { max-width: calc(100% - 7rem); }
-}
-
-/* Wave presentation: the source video owns the full frame on every viewport. */
-.mochi-hero { min-height: 100svh; background: var(--cream, #f4efe7); }
-.mochi-hero__pin { height: 100svh; min-height: 0; background: #cfaea5; }
-.mochi-hero__video {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  filter: contrast(1.12) saturate(1.16) brightness(.93);
-  transform: scale(1.012);
-}
-.mochi-hero__grade {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 50% 48%, rgba(255, 230, 217, .06), transparent 52%),
-    linear-gradient(180deg, rgba(32, 16, 27, .1), transparent 24%, transparent 72%, rgba(32, 16, 27, .18));
-  mix-blend-mode: multiply;
-}
-.mochi-hero__headline { z-index: 2; top: 12svh; }
-.mochi-hero__mono { z-index: 2; color: #241d1c; text-shadow: 0 1px 12px rgba(255, 237, 226, .34); }
-.mochi-hero__scroll-cue { z-index: 2; color: #241d1c; text-shadow: 0 1px 12px rgba(255, 237, 226, .34); }
-.mochi-hero__pin:not(.is-ready) .mochi-hero__video { opacity: 0; }
-.mochi-hero__pin:not(.is-ready) { background: url('/media/hero-seq-v4/poster.webp') center / cover no-repeat; }
-@media (max-width: 700px) {
-  .mochi-hero__video { object-position: 50% 50%; transform: scale(1.025); }
-  .mochi-hero__grade { background: linear-gradient(180deg, rgba(35, 14, 23, .1), transparent 22%, transparent 74%, rgba(35, 14, 23, .2)); }
-  .mochi-hero__headline { top: 10svh; width: calc(100% - 1.5rem); }
-  .mochi-hero__headline span, .mochi-hero__headline em { font-size: clamp(2.1rem, 11vw, 4rem); }
-  .mochi-hero__mono { left: 1rem; bottom: max(2.7rem, calc(env(safe-area-inset-bottom) + 1.4rem)); }
 }

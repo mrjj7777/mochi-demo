@@ -1,94 +1,273 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { clamp, createSpring, type SpringValue } from '../physics'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useGSAP } from '@gsap/react'
+import { clamp } from '../physics'
 import './Belief.css'
 
-type WordMode = 'soft' | 'squeezable' | 'yours'
-type LetterState = { spring: SpringValue; reveal: SpringValue; base: number }
+gsap.registerPlugin(ScrollTrigger, useGSAP)
 
-const copy: Array<{ word: WordMode; className: string }> = [
-  { word: 'soft', className: 'belief__word--cherry' },
-  { word: 'squeezable', className: 'belief__word--lychee' },
-  { word: 'yours', className: 'belief__word--mango' },
+type LineSpec = {
+  id: 'soft' | 'squeezable' | 'yours'
+  text: string
+  className: string
+  /** -1 = top line presses down, 0 = center core squashes, +1 = bottom line presses up */
+  role: -1 | 0 | 1
+}
+
+const LINES: LineSpec[] = [
+  { id: 'soft', text: 'soft.', className: 'belief__word--cherry', role: -1 },
+  { id: 'squeezable', text: 'squeezable.', className: 'belief__word--lychee', role: 0 },
+  { id: 'yours', text: 'yours.', className: 'belief__word--mango', role: 1 },
 ]
 
-function createLetters(word: string, mode: WordMode): LetterState[] {
-  return Array.from(word).map((_, index) => {
-    const spring = createSpring(mode === 'yours' ? 'heavy' : 'jelly', mode === 'yours' ? -1.08 - index * .04 : 1)
-    spring.setTarget(mode === 'yours' ? 0 : 1)
-    return { spring, reveal: createSpring('settle', -1), base: index }
-  })
+type ViscousSpring = { value: number; velocity: number; target: number }
+
+function stepViscous(s: ViscousSpring, dt: number, stiffness: number, damping: number, mass: number) {
+  const force = (s.target - s.value) * stiffness
+  const accel = (force - s.velocity * damping) / mass
+  s.velocity += accel * dt
+  s.value += s.velocity * dt
+}
+
+function smoothstep(edge0: number, edge1: number, x: number) {
+  const t = clamp((x - edge0) / Math.max(1e-4, edge1 - edge0), 0, 1)
+  return t * t * (3 - 2 * t)
 }
 
 export default function Belief() {
-  const rootRef = useRef<HTMLElement>(null)
-  const pointerRef = useRef({ x: .5, y: .5, active: false })
-  const lastTime = useRef(performance.now())
-  const visibleRef = useRef(false)
-  const words = useMemo(() => copy.map(item => ({ ...item, letters: createLetters(item.word, item.word) })), [])
-  const refs = useRef<Array<HTMLSpanElement | null>[]>([])
+  const sectionRef = useRef<HTMLElement>(null)
+  const pinRef = useRef<HTMLDivElement>(null)
+  const wordRefs = useRef<Array<HTMLSpanElement | null>>([])
+  const charRefs = useRef<Array<Array<HTMLSpanElement | null>>>([])
+
+  const progressRef = useRef(0)
+  const velocityRef = useRef(0)
+  const activeRef = useRef(false)
+
+  const charLists = useMemo(() => LINES.map(line => Array.from(line.text)), [])
 
   useEffect(() => {
-    const root = rootRef.current
-    if (!root) return
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    let raf = 0
-    let idleTimer = 0
-    const wake = () => {
-      if (idleTimer) { window.clearTimeout(idleTimer); idleTimer = 0 }
-      if (!raf) raf = requestAnimationFrame(tick)
-    }
-    const onPointer = (event: PointerEvent) => { const rect = root.getBoundingClientRect(); pointerRef.current = { x: (event.clientX - rect.left) / rect.width, y: (event.clientY - rect.top) / rect.height, active: true }; wake() }
-    const onLeave = () => { pointerRef.current.active = false }
-    const onScroll = () => {
-      const rect = root.getBoundingClientRect(); const viewport = window.innerHeight; const progress = clamp((viewport - rect.top) / Math.max(1, rect.height + viewport), 0, 1)
-      const pressure = clamp(Math.abs(Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scroll-velocity')) || 0) / 2.5, 0, 1)
-      const squeeze = clamp(Math.sin(progress * Math.PI) * .72 + pressure * .18, 0, .9)
-      words[1].letters.forEach(letter => letter.spring.setTarget(1 - squeeze * (1 - Math.abs(letter.base - (words[1].letters.length - 1) / 2) / Math.max(1, words[1].letters.length / 2)) * .3))
-      if (visibleRef.current) wake()
-    }
-    const observer = new IntersectionObserver(entries => { visibleRef.current = entries[0]?.isIntersecting ?? false; if (visibleRef.current) wake() }, { threshold: .08 })
-    observer.observe(root); root.addEventListener('pointermove', onPointer); root.addEventListener('pointerleave', onLeave); window.addEventListener('scroll', onScroll, { passive: true })
-    const tick = (now: number) => {
-      raf = 0
-      const dt = Math.min(.05, (now - lastTime.current) / 1000); lastTime.current = now
-      const pointer = pointerRef.current
-      words.forEach((entry, wordIndex) => entry.letters.forEach((letter, index) => {
-        if (wordIndex === 0 && visibleRef.current) {
-          if (pointer.active) {
-            const distance = Math.hypot(pointer.x - .5, pointer.y - (.25 + index / Math.max(1, entry.letters.length) * .5))
-            letter.spring.setTarget(1 - clamp(1 - distance * 2.2, 0, 1) * .14)
-          } else {
-            letter.spring.setTarget(1)
-          }
-        }
-        if (reduced) { letter.spring.snap(wordIndex === 2 ? 0 : 1); letter.reveal.snap(1) } else { letter.reveal.setTarget(visibleRef.current ? 1 : 0); letter.reveal.step(dt); letter.spring.step(dt) }
-        const node = refs.current[wordIndex]?.[index]
-        if (node) {
-          const physicalOffset = wordIndex === 2 ? -letter.spring.value * 10 : (1 - letter.spring.value) * 10
-          const y = (1 - letter.reveal.value) * 110 + physicalOffset
-          const scaleX = wordIndex === 1 ? letter.spring.value : 1
-          const scaleY = wordIndex === 0 ? letter.spring.value : 1
-          node.style.transform = `translate3d(0, ${y}%, 0) scale(${scaleX}, ${scaleY})`
-        }
-      }))
-      if (reduced) return
-      if (!visibleRef.current) {
-        idleTimer = window.setTimeout(() => { idleTimer = 0; if (visibleRef.current) wake() }, 1000)
-        return
-      }
-      raf = requestAnimationFrame(tick)
-    }
-    onScroll()
-    wake()
-    return () => { if (raf) cancelAnimationFrame(raf); if (idleTimer) window.clearTimeout(idleTimer); observer.disconnect(); root.removeEventListener('pointermove', onPointer); root.removeEventListener('pointerleave', onLeave); window.removeEventListener('scroll', onScroll) }
-  }, [words])
+    const section = sectionRef.current
+    const pin = pinRef.current
+    if (!section || !pin) return
 
-  return <section ref={rootRef} id="belief" className="belief section section--tall" data-aura="#2FA4A8,#E46A8E">
-    <div className="belief__words" aria-label="soft. squeezable. yours.">
-      {words.map((entry, wordIndex) => <span key={entry.word} className={`belief__word ${entry.className}`}>
-        {Array.from(entry.word).map((character, index) => <span key={`${entry.word}-${index}`} ref={node => { if (!refs.current[wordIndex]) refs.current[wordIndex] = []; refs.current[wordIndex][index] = node }} className="belief__char" aria-hidden="true">{character}</span>)}<span className="belief__punctuation" aria-hidden="true">.</span>
-      </span>)}
-    </div>
-    <p className="belief__small">a lip jelly you'll keep squeezing.</p>
-  </section>
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduced) return
+
+    let disposed = false
+    let rafId = 0
+    let lastNow = performance.now()
+
+    // Real-world viscous elastomer springs (heavy matte silicone feel: firm, tactile, zero cartoon jitter)
+    const spreadSpring: ViscousSpring = { value: 1, velocity: 0, target: 1 }
+    const squeezeSpring: ViscousSpring = { value: 0, velocity: 0, target: 0 }
+    const releaseOvershoot: ViscousSpring = { value: 0, velocity: 0, target: 0 }
+
+    const charSprings: ViscousSpring[][] = charLists.map(chars =>
+      chars.map(() => ({ value: 0, velocity: 0, target: 0 })),
+    )
+
+    const tick = (now: number) => {
+      rafId = 0
+      if (disposed || document.visibilityState === 'hidden') return
+
+      const dt = Math.min(0.04, Math.max(0.001, (now - lastNow) / 1000))
+      lastNow = now
+
+      const p = progressRef.current
+      // Decay instantaneous scroll velocity smoothly
+      velocityRef.current *= Math.exp(-9 * dt)
+      const velBoost = clamp(Math.abs(velocityRef.current) * 0.08, 0, 0.14)
+
+      // Phase 1 (0.00 -> 0.28): lines glide inward from architectural spread to touching contact
+      // Phase 2 (0.24 -> 0.66): peak physical compression across all three lines together
+      // Phase 3 (0.64 -> 0.96): elastic release — lines breathe back open with tactile silicone rebound
+      const approach = 1 - smoothstep(0.0, 0.28, p)
+      const releaseOpen = smoothstep(0.66, 0.96, p)
+      const targetSpread = Math.max(approach, releaseOpen * 0.92)
+
+      const squeezeIn = smoothstep(0.22, 0.5, p)
+      const squeezeOut = 1 - smoothstep(0.56, 0.78, p)
+      const rawSqueeze = clamp(squeezeIn * squeezeOut + squeezeIn * squeezeOut * velBoost, 0, 1.08)
+
+      // Release recoil impulse when crossing past peak compression
+      const releaseWave = smoothstep(0.62, 0.74, p) * (1 - smoothstep(0.74, 0.94, p))
+
+      spreadSpring.target = targetSpread
+      squeezeSpring.target = rawSqueeze
+      releaseOvershoot.target = releaseWave
+
+      // Weighted elastomer constants: heavy mass + smooth viscous damping
+      stepViscous(spreadSpring, dt, 130, 22, 1.35)
+      stepViscous(squeezeSpring, dt, 155, 19.5, 1.45)
+      stepViscous(releaseOvershoot, dt, 120, 16.5, 1.2)
+
+      const spread = spreadSpring.value
+      const sq = clamp(squeezeSpring.value, -0.1, 1.15)
+      const recoil = releaseOvershoot.value
+
+      const isMobile = window.innerWidth <= 700
+      const maxSpreadPx = isMobile ? 42 : 76
+      const maxPressPx = isMobile ? 22 : 40
+
+      LINES.forEach((line, lineIdx) => {
+        const wordEl = wordRefs.current[lineIdx]
+        const chars = charLists[lineIdx]
+        const mid = (chars.length - 1) / 2
+
+        // Line-level vertical travel: spread apart at rest, locked tightly together under squeeze
+        let lineY = 0
+        if (line.role === -1) {
+          lineY = -spread * maxSpreadPx + sq * maxPressPx - recoil * (isMobile ? 8 : 14)
+        } else if (line.role === 1) {
+          lineY = spread * maxSpreadPx - sq * maxPressPx + recoil * (isMobile ? 8 : 14)
+        } else {
+          // Center line absorbs micro vertical shift from scroll velocity
+          lineY = clamp(velocityRef.current * 2.2, -10, 10) * (0.25 + sq * 0.75)
+        }
+
+        // Line-level compression & Poisson volume preservation (scaleY drops -> scaleX expands cleanly)
+        const compressStrength = line.role === 0 ? 0.32 : 0.22
+        const lineScaleY = clamp(1 - sq * compressStrength + recoil * 0.045, 0.64, 1.08)
+        const lineScaleX = clamp(1 / Math.pow(lineScaleY, 0.44), 0.96, 1.18)
+        const trackTighten = -sq * (line.role === 0 ? 0.022 : 0.015)
+
+        if (wordEl) {
+          wordEl.style.transform = `translate3d(0, ${lineY.toFixed(2)}px, 0) scale(${lineScaleX.toFixed(4)}, ${lineScaleY.toFixed(4)})`
+          wordEl.style.letterSpacing = `${(-0.045 + trackTighten).toFixed(4)}em`
+        }
+
+        // Per-character micro-elasticity: center characters bear slightly deeper barrel strain & subtle outward push
+        chars.forEach((_, charIdx) => {
+          const normDist = mid > 0 ? (charIdx - mid) / mid : 0 // -1..+1
+          const centerWeight = 1 - Math.min(1, Math.abs(normDist)) * 0.55
+          const cSpring = charSprings[lineIdx][charIdx]
+          cSpring.target = sq * centerWeight
+
+          // Subtle physical phase lag from center outward
+          const stiffness = 175 - Math.abs(normDist) * 32
+          stepViscous(cSpring, dt, stiffness, 20, 1.25)
+
+          const charEl = charRefs.current[lineIdx]?.[charIdx]
+          if (charEl) {
+            const cSq = clamp(cSpring.value, -0.08, 1.15)
+            // Outer characters subtly push outward as inner material compresses (real elastomer Poisson bulge)
+            const bulgeX = normDist * cSq * (isMobile ? 3.5 : 7.5)
+            const cScaleY = clamp(1 - cSq * (line.role === 0 ? 0.09 : 0.06), 0.88, 1.04)
+            const cScaleX = clamp(1 / Math.pow(cScaleY, 0.5), 0.97, 1.07)
+            charEl.style.transform = `translate3d(${bulgeX.toFixed(2)}px, 0, 0) scale(${cScaleX.toFixed(4)}, ${cScaleY.toFixed(4)})`
+          }
+        })
+      })
+
+      const settled =
+        Math.abs(spreadSpring.target - spreadSpring.value) < 0.001 &&
+        Math.abs(spreadSpring.velocity) < 0.001 &&
+        Math.abs(squeezeSpring.target - squeezeSpring.value) < 0.001 &&
+        Math.abs(squeezeSpring.velocity) < 0.001 &&
+        Math.abs(releaseOvershoot.target - releaseOvershoot.value) < 0.001 &&
+        Math.abs(releaseOvershoot.velocity) < 0.001 &&
+        Math.abs(velocityRef.current) < 0.01
+
+      if (activeRef.current || !settled) {
+        rafId = requestAnimationFrame(tick)
+      }
+    }
+
+    const wake = () => {
+      if (disposed || document.visibilityState === 'hidden') return
+      if (!rafId) {
+        lastNow = performance.now()
+        rafId = requestAnimationFrame(tick)
+      }
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        activeRef.current = entry?.isIntersecting ?? false
+        if (activeRef.current) wake()
+      },
+      { threshold: 0 },
+    )
+    observer.observe(section)
+
+    const onWake = () => wake()
+    pin.addEventListener('mochi-belief-wake', onWake)
+    wake()
+
+    return () => {
+      disposed = true
+      observer.disconnect()
+      pin.removeEventListener('mochi-belief-wake', onWake)
+      if (rafId) cancelAnimationFrame(rafId)
+    }
+  }, [charLists])
+
+  useGSAP(
+    () => {
+      const section = sectionRef.current
+      const pin = pinRef.current
+      if (!section || !pin) return
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      if (reduced) return
+
+      const isMobile = window.matchMedia('(max-width: 700px)').matches
+      const trigger = ScrollTrigger.create({
+        trigger: section,
+        start: 'top top',
+        end: () => `+=${Math.round(window.innerHeight * (isMobile ? 1.65 : 2.3))}`,
+        pin: true,
+        pinSpacing: true,
+        anticipatePin: 1,
+        scrub: true,
+        invalidateOnRefresh: true,
+        onUpdate: self => {
+          progressRef.current = self.progress
+          velocityRef.current = clamp(self.getVelocity() / 1400, -2.5, 2.5)
+          pin.dispatchEvent(new Event('mochi-belief-wake'))
+        },
+      })
+      return () => trigger.kill()
+    },
+    { scope: sectionRef },
+  )
+
+  return (
+    <section
+      ref={sectionRef}
+      id="belief"
+      className="belief section"
+      data-aura="#2FA4A8,#E46A8E"
+      aria-label="soft. squeezable. yours."
+    >
+      <div ref={pinRef} className="belief__pin">
+        <div className="belief__stack">
+          {LINES.map((line, lineIdx) => (
+            <span
+              key={line.id}
+              ref={el => {
+                wordRefs.current[lineIdx] = el
+              }}
+              className={`belief__word ${line.className}`}
+            >
+              {charLists[lineIdx].map((ch, charIdx) => (
+                <span
+                  key={`${line.id}-${charIdx}`}
+                  ref={el => {
+                    if (!charRefs.current[lineIdx]) charRefs.current[lineIdx] = []
+                    charRefs.current[lineIdx][charIdx] = el
+                  }}
+                  className="belief__char"
+                  aria-hidden="true"
+                >
+                  {ch}
+                </span>
+              ))}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
 }

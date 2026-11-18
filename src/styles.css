@@ -288,7 +288,6 @@ em { font-family: var(--emotion); font-weight: 400; }
 .footer__signoff { position: relative; z-index: 3; margin: 0; font: 400 clamp(28px, 4vw, 64px)/1 var(--emotion); }
 .footer__word span, .footer__word span:hover { transform: none !important; }
 .reduced-note { padding: 0; background: transparent; }
-*:not(.global-aura) { transition: none !important; }
 @media (max-width: 700px) {
   .site-nav { top: 16px; left: 20px; right: 20px; }
   .nav-brand, .nav-links, .bag, .micro { font-size: 11px; }
@@ -758,10 +757,410 @@ html { scrollbar-color: var(--jelly) var(--cream); scrollbar-width: thin; }
 }
 @media (max-width: 700px) {
   .section--tall { min-height: 126svh !important; }
-  .section--squeeze { min-height: 128svh !important; }
-  .squeeze__inner { height: 100svh; }
-  .squeeze__product { transform: translateY(0); }
-  .flavour-panel__name { top: 26vh; font-size: clamp(3.5rem, 17vw, 7rem); opacity: .14; }
+  .flavour-panel__name { top: 26vh; font-size: clamp(3.5rem, 17vw, 7rem); opacity: .9; }
   .flavour-dots { color: var(--ink); }
   .flavour-dots button { opacity: .78; }
+}
+
+/* ==========================================================================
+   Sophisticated Minimalist Editorial Pass (Hero / Belief / Flavours / Lookbook)
+   ========================================================================== */
+
+/* 1. Flavours: Massive Typography BEHIND (z=1), Transparent Product IN FRONT (z=3) */
+.flavours {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+}
+
+.flavours__track {
+  display: flex;
+  height: 100svh;
+  width: max-content;
+}
+
+.flavour-panel {
+  position: relative;
+  width: 100vw;
+  height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: transparent !important;
+}
+
+.flavour-panel__name {
+  position: absolute;
+  z-index: 1 !important;
+  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  padding-bottom: 6svh;
+  font-family: var(--display);
+  font-size: clamp(4.2rem, 13.8vw, 14.5rem);
+  font-weight: 400;
+  line-height: 0.85;
+  letter-spacing: -0.055em;
+  color: var(--jelly);
+  opacity: 0.92 !important;
+  mix-blend-mode: normal !important;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  will-change: transform;
+}
+
+.flavour-panel__image {
+  position: relative;
+  z-index: 3 !important;
+  display: block;
+  width: min(36vw, 460px);
+  height: min(64svh, 620px);
+  margin-top: -3svh;
+  object-fit: contain !important;
+  mix-blend-mode: normal !important;
+  filter: drop-shadow(0 30px 40px rgba(20, 20, 20, 0.22)) saturate(1.04) contrast(1.02) !important;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.flavour-panel__footer {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  bottom: 11svh;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.flavour-panel__footer .flavour-panel__mood {
+  position: static;
+  margin: 0;
+  font-family: var(--ui);
+  font-size: 16px;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+
+.flavour-panel__footer .flavour-panel__mood em {
+  font-family: var(--emotion);
+  font-style: italic;
+  font-size: 1.24em;
+}
+
+.flavour-panel__footer .add-pill {
+  position: static;
+  min-height: 36px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(20, 20, 20, 0.32);
+  background: transparent;
+  color: var(--ink);
+  font: 500 11px/1 var(--micro);
+  letter-spacing: 0.14em;
+  transition: border-color 220ms ease, opacity 220ms ease;
+}
+
+.flavour-panel__footer .add-pill:hover,
+.flavour-panel__footer .add-pill:focus-visible {
+  border-bottom-color: var(--ink);
+  opacity: 0.72;
+}
+
+.flavour-dots {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0;
+  background: transparent;
+}
+
+.flavour-dots button {
+  padding: 4px 0;
+  border-bottom: 1px solid transparent;
+  font: 500 11px/1 var(--micro);
+  letter-spacing: 0.14em;
+  color: var(--ink) !important;
+  opacity: 0.42;
+  text-shadow: none;
+  transition: opacity 220ms ease, border-color 220ms ease;
+}
+
+.flavour-dots button:hover {
+  opacity: 0.78;
+}
+
+.flavour-dots button.active {
+  opacity: 1;
+  border-bottom-color: var(--ink);
+}
+
+/* 2. Lookbook: Pinned Stop-Scroll Studio Camera-Flash Editorial Stack */
+.lookbook--pinned {
+  height: 100svh;
+  min-height: 100svh !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.lookbook__pin {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 76px 7vw 52px;
+  overflow: hidden;
+}
+
+.lookbook__layout {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 440px);
+  align-items: center;
+  gap: clamp(2rem, 6vw, 7rem);
+  width: min(100%, 1180px);
+  margin: 0 auto;
+}
+
+.lookbook--pinned .lookbook__head {
+  margin: 0;
+}
+
+.lookbook--pinned .lookbook__head .display {
+  font-size: clamp(3.1rem, 6.2vw, 6.6rem);
+  line-height: 0.92;
+  max-width: 9ch;
+}
+
+.lookbook--pinned .lookbook__head em {
+  font-family: var(--emotion);
+  font-style: italic;
+  font-size: 1.12em;
+}
+
+.lookbook__stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 74svh;
+  margin: 0 auto;
+}
+
+.lookbook__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transform-origin: center center;
+  transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1), opacity 420ms ease;
+  will-change: transform, opacity;
+}
+
+.lookbook__frame-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #e9e2d7;
+}
+
+.lookbook__frame-inner img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 22%;
+}
+
+.lookbook__frame-inner img.is-exposed {
+  animation: lookbook-exposure 440ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.lookbook__strobe {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 252, 247, 0.96) 0%, rgba(255, 249, 242, 0.78) 46%, rgba(255, 246, 236, 0.32) 100%);
+  mix-blend-mode: screen;
+  animation: lookbook-strobe 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes lookbook-strobe {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.94;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes lookbook-exposure {
+  0% {
+    filter: brightness(1.38) contrast(1.06);
+  }
+  100% {
+    filter: brightness(1) contrast(1);
+  }
+}
+
+.lookbook__rail {
+  position: absolute;
+  left: 7vw;
+  right: 7vw;
+  bottom: 28px;
+  height: 1px;
+  background: rgba(20, 20, 20, 0.14);
+}
+
+.lookbook__rail-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--ink);
+  transform-origin: left center;
+  transition: transform 180ms ease-out;
+}
+
+.lookbook--reduced {
+  min-height: auto;
+  padding: 14vh 7vw;
+}
+
+.lookbook__static-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 6vh;
+}
+
+.lookbook__static-card {
+  padding: 0;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: transparent;
+}
+
+.lookbook__static-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 3. Clean Wallpapers & Footer */
+.wallpaper-card .download-pill {
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  padding: 10px 8px;
+  background: rgba(250, 247, 242, 0.88);
+  color: var(--ink);
+  border-bottom: 0;
+  font: 500 11px/1 var(--micro);
+  letter-spacing: 0.12em;
+  transition: background-color 200ms ease;
+}
+
+.wallpaper-card .download-pill:hover {
+  background: var(--milk);
+}
+
+.footer {
+  min-height: 70svh;
+  gap: 14px;
+  padding: 0 5vw 36px;
+}
+
+.footer__word {
+  width: 100%;
+  justify-content: center;
+  font-size: clamp(4.8rem, 18.5vw, 20.5rem) !important;
+  letter-spacing: -0.055em !important;
+  line-height: 0.86 !important;
+}
+
+.footer__credit {
+  opacity: 0.56;
+  font: 500 11px/1 var(--micro);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 700px) {
+  .flavour-panel__name {
+    display: grid !important;
+    top: 0;
+    padding-bottom: 12svh;
+    font-size: clamp(3.1rem, 16vw, 5.8rem) !important;
+    opacity: 0.9 !important;
+  }
+
+  .flavour-panel__image {
+    width: 72vw;
+    height: 50svh;
+    max-height: 460px;
+    margin-top: -5svh;
+  }
+
+  .flavour-panel__footer {
+    bottom: 10svh;
+    gap: 10px;
+  }
+
+  .flavour-panel__footer .flavour-panel__mood {
+    display: block !important;
+    font-size: 14px;
+  }
+
+  .flavour-dots {
+    gap: 14px;
+    bottom: 20px;
+  }
+
+  .lookbook__pin {
+    padding: 68px 6vw 42px;
+  }
+
+  .lookbook__layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .lookbook--pinned .lookbook__head .display {
+    font-size: clamp(2.4rem, 10vw, 3.6rem);
+    max-width: none;
+  }
+
+  .lookbook__stage {
+    width: min(82vw, 340px);
+    max-height: 56svh;
+  }
+
+  .lookbook__static-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
 }

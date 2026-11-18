@@ -1,15 +1,85 @@
-.belief__char,
-.belief__punctuation {
-  display: inline-block;
+.belief {
+  position: relative;
+  height: 100svh;
+  min-height: 100svh !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.belief__pin {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 0 4vw;
+  overflow: hidden;
+}
+
+.belief__stack {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.08em;
+  width: 100%;
+  max-width: 94vw;
+}
+
+.belief__word {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  font-family: var(--display, 'Krona One', sans-serif);
+  font-size: clamp(3.2rem, 8.8vw, 9.6rem);
+  font-weight: 400;
+  line-height: 0.88;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+  transform-origin: center center;
+  will-change: transform, letter-spacing;
+  user-select: none;
+}
+
+.belief__word--cherry {
+  color: #B3122E;
+}
+
+.belief__word--lychee {
+  color: #E46A8E;
+}
+
+.belief__word--mango {
+  color: #C48800;
 }
 
 .belief__char {
-  transform-origin: center bottom;
+  display: inline-block;
+  transform-origin: center center;
   will-change: transform;
 }
 
+@media (max-width: 700px) {
+  .belief__pin {
+    padding: 0 3vw;
+  }
+
+  .belief__word {
+    font-size: clamp(2.05rem, 9.8vw, 3.4rem);
+    line-height: 0.92;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .belief__word,
   .belief__char {
+    transform: none !important;
     will-change: auto;
+  }
+
+  .belief__stack {
+    gap: 0.24em;
   }
 }
