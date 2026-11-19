@@ -93,9 +93,9 @@ export default function BagPage({
       const rect = stageEl.getBoundingClientRect()
       const nx = clamp(((e.clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1, -1, 1)
       const ny = clamp(((e.clientY - rect.top) / Math.max(1, rect.height)) * 2 - 1, -1, 1)
-      // Inverse 3D depth parallax for tangible floating realism
-      rotY.setTarget(-nx * 14)
-      rotX.setTarget(ny * 8)
+      // True physical 3D tilt: cursor side pushes back while the opposite side swings outward
+      rotY.setTarget(nx * 14)
+      rotX.setTarget(-ny * 8)
       wake()
     }
 

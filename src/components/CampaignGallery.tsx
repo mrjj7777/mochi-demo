@@ -383,11 +383,10 @@ export default function CampaignGallery({ reduced = false }: { reduced?: boolean
       const currentOffset = reduced ? offsetSpring.target : offsetSpring.step(dt)
       const velocity = offsetSpring.velocity
 
-      // Exact unseen.co 3D architectural room dolly camera:
-      // Camera glides smoothly across a curved 3D rail while locked onto a deep central anchor (0, 0, -1.6),
-      // making the entire curved 29-poster room pivot around you with true inside-a-3D-box spatial depth.
-      camXSpring.setTarget(reduced ? 0 : pointerNormX * 1.95)
-      camYSpring.setTarget(reduced ? 0 : -pointerNormY * 0.78)
+      // True physical 3D room dolly camera:
+      // Whichever side the cursor approaches recedes back into depth while the opposite side swings outward toward you.
+      camXSpring.setTarget(reduced ? 0 : -pointerNormX * 1.95)
+      camYSpring.setTarget(reduced ? 0 : pointerNormY * 0.78)
       roomYawSpring.setTarget(reduced ? 0 : Math.abs(pointerNormX) * 0.42)
 
       const cx = camXSpring.step(dt)
