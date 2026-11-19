@@ -268,15 +268,6 @@ function Flavours({ bag, setBag }: { bag: number; setBag: (value: number) => voi
   )
 }
 
-const photoNames = [
-  'mochi-model-1.webp',
-  'mochi-diptych-cherry.webp',
-  'mochi-model-4.webp',
-  'mochi-model-3.webp',
-  'mochi-model-2.webp',
-  'mochi-model-5.webp',
-]
-
 function Texture() {
   const photoRef = useRef<HTMLDivElement>(null)
   const lensRef = useRef<HTMLDivElement>(null)
@@ -333,141 +324,6 @@ function Texture() {
       <p className="texture__line">
         real lips. <em>real gloss.</em>
       </p>
-    </section>
-  )
-}
-
-const STACK_TILTS = [-2.4, 1.9, -1.4, 2.2, -1.8, 0]
-
-function Lookbook({ onOpen, reduced }: { onOpen: (src: string, title: string) => void; reduced: boolean }) {
-  const sectionRef = useRef<HTMLElement>(null)
-  const pinRef = useRef<HTMLDivElement>(null)
-  const [activeIndex, setActiveIndex] = useState(0)
-  const [flashKey, setFlashKey] = useState(0)
-  const [progress, setProgress] = useState(0)
-  const lastIndexRef = useRef(0)
-
-  useGSAP(
-    () => {
-      const section = sectionRef.current
-      const pin = pinRef.current
-      if (!section || !pin || reduced) return
-
-      const isMobile = window.matchMedia('(max-width: 700px)').matches
-      const trigger = ScrollTrigger.create({
-        trigger: section,
-        start: 'top top',
-        end: () => `+=${Math.round(window.innerHeight * (isMobile ? 2.5 : 3.4))}`,
-        pin: true,
-        pinSpacing: true,
-        anticipatePin: 1,
-        scrub: true,
-        invalidateOnRefresh: true,
-        onUpdate: self => {
-          const p = self.progress
-          setProgress(p)
-          const idx = Math.min(photoNames.length - 1, Math.floor(p * photoNames.length * 0.999))
-          if (idx !== lastIndexRef.current) {
-            lastIndexRef.current = idx
-            setActiveIndex(idx)
-            setFlashKey(k => k + 1)
-          }
-        },
-      })
-      return () => trigger.kill()
-    },
-    { scope: sectionRef, dependencies: [reduced] },
-  )
-
-  if (reduced) {
-    return (
-      <section id="lookbook" ref={sectionRef} className="lookbook lookbook--reduced section" data-aura="#F2EDE4,#F6D3D6">
-        <div className="lookbook__head">
-          <p className="display">
-            worn by <em>everyone.</em>
-          </p>
-        </div>
-        <div className="lookbook__static-grid">
-          {photoNames.map((src, idx) => {
-            const item = flavours[idx % flavours.length]
-            return (
-              <button
-                type="button"
-                key={src}
-                className="lookbook__static-card"
-                onClick={() => onOpen(`/media/photos/${src}`, item.name)}
-                aria-label={`Open ${item.name} lookbook photograph`}
-              >
-                <img src={`/media/photos/${src}`} alt={`${item.name} lookbook`} loading="eager" decoding="async" />
-              </button>
-            )
-          })}
-        </div>
-      </section>
-    )
-  }
-
-  return (
-    <section id="lookbook" ref={sectionRef} className="lookbook lookbook--pinned section" data-aura="#F2EDE4,#F6D3D6">
-      <div ref={pinRef} className="lookbook__pin">
-        <div className="lookbook__layout">
-          <div className="lookbook__head">
-            <p className="display">
-              worn by <em>everyone.</em>
-            </p>
-          </div>
-
-          <div className="lookbook__stage">
-            {photoNames.map((src, idx) => {
-              const item = flavours[idx % flavours.length]
-              const isCurrent = idx === activeIndex
-              const isPast = idx < activeIndex
-              const depth = activeIndex - idx
-              const tilt = isCurrent ? 0 : STACK_TILTS[idx % STACK_TILTS.length]
-              const offsetX = isPast ? -depth * 14 : 0
-              const offsetY = isPast ? depth * 10 : 28
-              const scale = isCurrent ? 1 : isPast ? Math.max(0.88, 1 - depth * 0.032) : 0.96
-
-              return (
-                <button
-                  type="button"
-                  key={src}
-                  className={`lookbook__frame ${isCurrent ? 'is-active' : ''} ${isPast ? 'is-past' : 'is-upcoming'}`}
-                  style={
-                    {
-                      zIndex: idx + 1,
-                      opacity: isCurrent ? 1 : isPast ? Math.max(0.32, 0.82 - depth * 0.14) : 0,
-                      transform: `translate3d(${offsetX}px, ${offsetY}px, 0) scale(${scale.toFixed(3)}) rotate(${tilt}deg)`,
-                      pointerEvents: isCurrent ? 'auto' : 'none',
-                    } as React.CSSProperties
-                  }
-                  onClick={() => onOpen(`/media/photos/${src}`, item.name)}
-                  tabIndex={isCurrent ? 0 : -1}
-                  aria-label={`Open ${item.name} lookbook photograph`}
-                >
-                  <div className="lookbook__frame-inner">
-                    <img
-                      src={`/media/photos/${src}`}
-                      alt={`${item.name} lookbook`}
-                      loading="eager"
-                      decoding="async"
-                      className={isCurrent && flashKey > 0 ? 'is-exposed' : ''}
-                      key={isCurrent ? `${src}-${flashKey}` : src}
-                    />
-                    {isCurrent && flashKey > 0 && (
-                      <span key={`strobe-${flashKey}`} className="lookbook__strobe" aria-hidden="true" />
-                    )}
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        <div className="lookbook__rail" aria-hidden="true">
-          <span className="lookbook__rail-fill" style={{ transform: `scaleX(${Math.max(0.06, progress)})` }} />
-        </div>
-      </div>
     </section>
   )
 }
@@ -532,25 +388,27 @@ function Stand() {
 
   return (
     <section id="stand" className="stand section" data-aura="#8FC3E6,#F2EDE4">
-      <div className="stand__copy">
-        <p className="display">the stand.</p>
-        <p>a soft home for all six.</p>
-      </div>
-      <div
-        className="stand__scene"
-        onPointerDown={startDrag}
-        onPointerMove={moveDrag}
-        onPointerUp={finishDrag}
-        onPointerCancel={finishDrag}
-        style={{ transform: `rotateY(${turn}deg)` }}
-      >
-        <img
-          className="stand__image"
-          src="/media/photos/mochi-blob-stand.webp"
-          alt="MOCHI stand with all six lip jelly shades"
-          loading="lazy"
-          decoding="async"
-        />
+      <div className="stand__inner">
+        <div className="stand__copy">
+          <p className="display">the stand.</p>
+          <p>a soft home for all six.</p>
+        </div>
+        <div
+          className="stand__scene"
+          onPointerDown={startDrag}
+          onPointerMove={moveDrag}
+          onPointerUp={finishDrag}
+          onPointerCancel={finishDrag}
+          style={{ transform: `rotateY(${turn}deg)` }}
+        >
+          <img
+            className="stand__image"
+            src="/media/photos/mochi-blob-stand.webp"
+            alt="MOCHI stand with all six lip jelly shades"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
       </div>
     </section>
   )
@@ -691,6 +549,7 @@ function App() {
   const [lightbox, setLightbox] = useState<{ src: string; title: string } | null>(null)
   const [galleryModal, setGalleryModal] = useState<{ items: GalleryItem[]; index: number } | null>(null)
   const [flavour, setFlavour] = useState(flavours[0])
+  const lenisRef = useRef<Lenis | null>(null)
   const context = useMemo(() => ({ flavour, setFlavour }), [flavour])
 
   useEffect(() => {
@@ -709,11 +568,12 @@ function App() {
   useEffect(() => {
     if (reduced) return
     const lenis = new Lenis({
-      duration: 1.2,
+      duration: 1.15,
       smoothWheel: true,
       syncTouch: false,
       wheelMultiplier: 0.9,
     })
+    lenisRef.current = lenis
     const update = (time: number) => lenis.raf(time * 1000)
     gsap.ticker.add(update)
     gsap.ticker.lagSmoothing(0)
@@ -721,6 +581,7 @@ function App() {
     return () => {
       gsap.ticker.remove(update)
       lenis.destroy()
+      lenisRef.current = null
     }
   }, [reduced])
 
@@ -733,8 +594,13 @@ function App() {
 
   const jump = (id: string) => {
     const el = document.getElementById(id)
-    const target = el?.closest('.pin-spacer') || el
-    target?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' })
+    const target = (el?.closest('.pin-spacer') as HTMLElement | null) || el
+    if (!target) return
+    if (lenisRef.current && !reduced) {
+      lenisRef.current.scrollTo(target, { offset: 0, duration: 1.1 })
+    } else {
+      target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' })
+    }
   }
 
   return (
@@ -749,7 +615,6 @@ function App() {
           <Flavours bag={bag} setBag={setBag} />
           <Texture />
           <BlobjectShowcase reduced={reduced} onOpen={(src, title) => setLightbox({ src, title })} />
-          <Lookbook reduced={reduced} onOpen={(src, title) => setLightbox({ src, title })} />
           <Stand />
           <CampaignLoopGallery
             reduced={reduced}

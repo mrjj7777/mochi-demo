@@ -14,90 +14,88 @@ export type GalleryItem = {
   downloadSrc: string
   alt: string
   title: string
-  aspect: number // width / height
+  aspect: number
 }
 
 /**
- * 16 100%-unique visuals (10 MOCHI campaigns + 6 downloadable MOCHI wallpapers).
- * Zero image overlap with Hero, Flavours, Texture, BlobjectShowcase, Lookbook, or Stand.
+ * 18 100%-unique visuals merged into ONE unified 3D Spiral Flux cylinder:
+ * 5 editorial creator portraits + 7 MOCHI campaign posters + 6 downloadable wallpapers.
+ * Zero image repetition anywhere on the entire page.
  */
 const ARCHIVE_ITEMS: GalleryItem[] = [
   { id: 'a01', src: '/media/campaigns/pink-noise.webp', downloadSrc: '/media/campaigns/pink-noise.webp', alt: 'MOCHI Pink Noise cover', title: 'PINK NOISE', aspect: 0.8 },
-  { id: 'a02', src: `/media/wallpapers/mochi-${flavours[0].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[0].asset}-${wallpaperFileSize}.png`, alt: 'CHERRY MOCHI wallpaper', title: 'CHERRY', aspect: 0.56 },
-  { id: 'a03', src: '/media/campaigns/gloss-gang.webp', downloadSrc: '/media/campaigns/gloss-gang.webp', alt: 'MOCHI Gloss Gang editorial', title: 'GLOSS GANG', aspect: 0.8 },
-  { id: 'a04', src: '/media/campaigns/one-of-48.webp', downloadSrc: '/media/campaigns/one-of-48.webp', alt: 'MOCHI 1 of 48 poster', title: '1 OF 48', aspect: 0.8 },
-  { id: 'a05', src: `/media/wallpapers/mochi-${flavours[1].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[1].asset}-${wallpaperFileSize}.png`, alt: 'PEACH MOCHI wallpaper', title: 'PEACH', aspect: 0.56 },
-  { id: 'a06', src: '/media/campaigns/pout-jaipur.webp', downloadSrc: '/media/campaigns/pout-jaipur.webp', alt: 'MOCHI Pout Jaipur campaign', title: 'POUT', aspect: 0.8 },
-  { id: 'a07', src: '/media/campaigns/hold-this.webp', downloadSrc: '/media/campaigns/hold-this.webp', alt: 'MOCHI Hold This campaign', title: 'HOLD THIS', aspect: 0.8 },
-  { id: 'a08', src: `/media/wallpapers/mochi-${flavours[2].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[2].asset}-${wallpaperFileSize}.png`, alt: 'LYCHEE MOCHI wallpaper', title: 'LYCHEE', aspect: 0.56 },
-  { id: 'a09', src: '/media/campaigns/squish-club.webp', downloadSrc: '/media/campaigns/squish-club.webp', alt: 'MOCHI Squish Club zine', title: 'SQUISH CLUB', aspect: 0.8 },
-  { id: 'a10', src: '/media/campaigns/boys-pout.webp', downloadSrc: '/media/campaigns/boys-pout.webp', alt: 'MOCHI Boys Pout Too campaign', title: 'BOYS POUT TOO', aspect: 0.8 },
-  { id: 'a11', src: `/media/wallpapers/mochi-${flavours[3].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[3].asset}-${wallpaperFileSize}.png`, alt: 'GRAPE MOCHI wallpaper', title: 'GRAPE', aspect: 0.56 },
-  { id: 'a12', src: '/media/campaigns/hand-squeeze.webp', downloadSrc: '/media/campaigns/hand-squeeze.webp', alt: 'MOCHI hand squeeze study', title: 'SQUEEZE', aspect: 0.8 },
-  { id: 'a13', src: '/media/campaigns/one-pout-six.webp', downloadSrc: '/media/campaigns/one-pout-six.webp', alt: 'MOCHI One Pout Six Times poster', title: 'ONE POUT', aspect: 0.8 },
-  { id: 'a14', src: `/media/wallpapers/mochi-${flavours[4].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[4].asset}-${wallpaperFileSize}.png`, alt: 'MINT MOCHI wallpaper', title: 'MINT', aspect: 0.56 },
-  { id: 'a15', src: '/media/campaigns/spin-cycle.webp', downloadSrc: '/media/campaigns/spin-cycle.webp', alt: 'MOCHI Spin Cycle campaign', title: 'SPIN CYCLE', aspect: 0.8 },
-  { id: 'a16', src: `/media/wallpapers/mochi-${flavours[5].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[5].asset}-${wallpaperFileSize}.png`, alt: 'MANGO MOCHI wallpaper', title: 'MANGO', aspect: 0.56 },
+  { id: 'a02', src: '/media/photos/mochi-model-1.webp', downloadSrc: '/media/photos/mochi-model-1.webp', alt: 'MOCHI creator portrait 01', title: 'CHERRY LOOK', aspect: 0.78 },
+  { id: 'a03', src: `/media/wallpapers/mochi-${flavours[0].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[0].asset}-${wallpaperFileSize}.png`, alt: 'CHERRY MOCHI wallpaper', title: 'CHERRY', aspect: 0.56 },
+  { id: 'a04', src: '/media/campaigns/gloss-gang.webp', downloadSrc: '/media/campaigns/gloss-gang.webp', alt: 'MOCHI Gloss Gang editorial', title: 'GLOSS GANG', aspect: 0.8 },
+  { id: 'a05', src: '/media/photos/mochi-model-2.webp', downloadSrc: '/media/photos/mochi-model-2.webp', alt: 'MOCHI creator portrait 02', title: 'MINT LOOK', aspect: 0.78 },
+  { id: 'a06', src: `/media/wallpapers/mochi-${flavours[1].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[1].asset}-${wallpaperFileSize}.png`, alt: 'PEACH MOCHI wallpaper', title: 'PEACH', aspect: 0.56 },
+  { id: 'a07', src: '/media/campaigns/pout-jaipur.webp', downloadSrc: '/media/campaigns/pout-jaipur.webp', alt: 'MOCHI Pout Jaipur campaign', title: 'POUT', aspect: 0.8 },
+  { id: 'a08', src: '/media/photos/mochi-model-3.webp', downloadSrc: '/media/photos/mochi-model-3.webp', alt: 'MOCHI creator portrait 03', title: 'GRAPE LOOK', aspect: 0.78 },
+  { id: 'a09', src: `/media/wallpapers/mochi-${flavours[2].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[2].asset}-${wallpaperFileSize}.png`, alt: 'LYCHEE MOCHI wallpaper', title: 'LYCHEE', aspect: 0.56 },
+  { id: 'a10', src: '/media/campaigns/one-of-48.webp', downloadSrc: '/media/campaigns/one-of-48.webp', alt: 'MOCHI 1 of 48 poster', title: '1 OF 48', aspect: 0.8 },
+  { id: 'a11', src: '/media/photos/mochi-model-4.webp', downloadSrc: '/media/photos/mochi-model-4.webp', alt: 'MOCHI creator portrait 04', title: 'LYCHEE LOOK', aspect: 0.78 },
+  { id: 'a12', src: `/media/wallpapers/mochi-${flavours[3].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[3].asset}-${wallpaperFileSize}.png`, alt: 'GRAPE MOCHI wallpaper', title: 'GRAPE', aspect: 0.56 },
+  { id: 'a13', src: '/media/campaigns/hold-this.webp', downloadSrc: '/media/campaigns/hold-this.webp', alt: 'MOCHI Hold This campaign', title: 'HOLD THIS', aspect: 0.8 },
+  { id: 'a14', src: '/media/photos/mochi-model-5.webp', downloadSrc: '/media/photos/mochi-model-5.webp', alt: 'MOCHI creator portrait 05', title: 'MANGO LOOK', aspect: 0.78 },
+  { id: 'a15', src: `/media/wallpapers/mochi-${flavours[4].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[4].asset}-${wallpaperFileSize}.png`, alt: 'MINT MOCHI wallpaper', title: 'MINT', aspect: 0.56 },
+  { id: 'a16', src: '/media/campaigns/squish-club.webp', downloadSrc: '/media/campaigns/squish-club.webp', alt: 'MOCHI Squish Club zine', title: 'SQUISH CLUB', aspect: 0.8 },
+  { id: 'a17', src: '/media/campaigns/boys-pout.webp', downloadSrc: '/media/campaigns/boys-pout.webp', alt: 'MOCHI Boys Pout Too campaign', title: 'BOYS POUT TOO', aspect: 0.8 },
+  { id: 'a18', src: `/media/wallpapers/mochi-${flavours[5].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[5].asset}-${wallpaperFileSize}.png`, alt: 'MANGO MOCHI wallpaper', title: 'MANGO', aspect: 0.56 },
 ]
 
-const ORB_VERTEX = `
-  uniform float uTime;
-  uniform float uPulse;
-  uniform vec2 uPointer;
-  varying vec3 vNormal;
-  varying vec3 vViewPos;
-  varying vec3 vWorldPos;
+/**
+ * Custom realistic 3D curved-gallery-print shader:
+ * wraps directional studio light across the physical cylinder curvature,
+ * subtly attenuates far-side prints into warm gallery depth, and sweeps
+ * a tactile glossy specular sheen across hovered posters.
+ */
+const POSTER_VERTEX = `
+  varying vec2 vUv;
+  varying vec3 vNormalView;
+  varying vec3 vViewDir;
 
   void main() {
-    vec3 p = position;
-    // Organic Blobject liquid-silicone ripples driven by time, spin velocity, and mouse
-    float w1 = sin(p.x * 2.4 + uTime * 1.1 + uPointer.x * 1.4) * cos(p.y * 2.2 - uTime * 0.85);
-    float w2 = sin(p.z * 2.8 - uTime * 0.95 + uPointer.y * 1.3);
-    float disp = (w1 * 0.065 + w2 * 0.045) * (1.0 + uPulse * 1.15);
-    p += normal * disp;
-
-    vec4 mvPos = modelViewMatrix * vec4(p, 1.0);
-    vNormal = normalize(normalMatrix * normal);
-    vViewPos = -mvPos.xyz;
-    vWorldPos = (modelMatrix * vec4(p, 1.0)).xyz;
+    vUv = uv;
+    vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+    vNormalView = normalize(normalMatrix * normal);
+    vViewDir = normalize(-mvPos.xyz);
     gl_Position = projectionMatrix * mvPos;
   }
 `
 
-const ORB_FRAGMENT = `
-  uniform float uTime;
+const POSTER_FRAGMENT = `
+  uniform sampler2D uMap;
+  uniform float uOpacity;
+  uniform float uFrontFactor;
+  uniform float uHover;
   uniform vec2 uPointer;
-  varying vec3 vNormal;
-  varying vec3 vViewPos;
-  varying vec3 vWorldPos;
+
+  varying vec2 vUv;
+  varying vec3 vNormalView;
+  varying vec3 vViewDir;
 
   void main() {
-    vec3 N = normalize(vNormal);
-    vec3 V = normalize(vViewPos);
-    float ndotv = clamp(abs(dot(N, V)), 0.0, 1.0);
-    float fresnel = pow(1.0 - ndotv, 2.2);
+    vec4 tex = texture2D(uMap, vUv);
+    vec3 N = gl_FrontFacing ? normalize(vNormalView) : -normalize(vNormalView);
+    vec3 V = normalize(vViewDir);
 
-    // Translucent couture MOCHI jelly-glass Blobject droplet with internal caustic sheen
-    vec3 blushCore = vec3(0.95, 0.78, 0.82);
-    vec3 cherryTint = vec3(0.84, 0.22, 0.38);
-    vec3 skyIridescence = vec3(0.56, 0.80, 0.94);
-    vec3 purePearl = vec3(1.0, 0.98, 0.96);
+    // Directional studio key light wrapping across the physical 3D cylinder curve
+    vec3 keyLight = normalize(vec3(0.45 + uPointer.x * 0.5, 0.55 + uPointer.y * 0.4, 1.0));
+    float diff = clamp(dot(N, keyLight), 0.0, 1.0);
+    float curveLighting = 0.80 + 0.24 * diff;
 
-    float caustic = 0.5 + 0.5 * sin(vWorldPos.y * 3.1 - vWorldPos.x * 2.2 + uTime * 1.15);
-    float band = pow(caustic, 2.0);
-    vec3 interior = mix(blushCore, mix(cherryTint, skyIridescence, caustic), 0.34 + band * 0.28);
+    // Subtle coated art-paper gloss sheen across the curved highlight
+    vec3 H = normalize(keyLight + V);
+    float spec = pow(max(dot(N, H), 0.0), 36.0) * (0.07 + uHover * 0.14);
 
-    // Crisp studio glass key & rim lights
-    vec3 L1 = normalize(vec3(0.55 + uPointer.x * 0.9, 0.85 + uPointer.y * 0.7, 1.15));
-    vec3 L2 = normalize(vec3(-0.9, -0.35, 0.85));
-    vec3 H1 = normalize(L1 + V);
-    vec3 H2 = normalize(L2 + V);
-    float spec1 = pow(max(dot(N, H1), 0.0), 92.0);
-    float spec2 = pow(max(dot(N, H2), 0.0), 34.0) * 0.42;
+    // Warm gallery atmospheric veil on back-of-cylinder prints so front prints stay razor crisp
+    vec3 creamFog = vec3(0.949, 0.929, 0.894);
+    float depthMist = (1.0 - uFrontFactor) * 0.36;
 
-    vec3 col = mix(interior, purePearl, fresnel * 0.68) + purePearl * (spec1 * 1.15 + spec2 * 0.55);
-    float alpha = clamp(0.46 + fresnel * 0.46 + spec1 * 0.5, 0.0, 0.96);
-    gl_FragColor = vec4(col, alpha);
+    vec3 col = tex.rgb * curveLighting + vec3(1.0, 0.985, 0.97) * spec;
+    col = mix(col, creamFog, depthMist * (1.0 - uHover * 0.7));
+
+    gl_FragColor = vec4(col, tex.a * uOpacity);
   }
 `
 
@@ -107,23 +105,19 @@ function wrapSlot(value: number, total: number) {
   return v
 }
 
-/** Creates a true physically curved cylindrical arc mesh facing radially outward. */
 function createCurvedPosterGeometry(radius: number, height: number, aspect: number) {
   const arcWidth = height * aspect
   const thetaLength = arcWidth / radius
-  const geom = new THREE.CylinderGeometry(
+  return new THREE.CylinderGeometry(
     radius,
     radius,
     height,
-    26,
+    28,
     1,
     true,
     -thetaLength / 2,
     thetaLength,
   )
-  // Rotate so the center of the arc sits on +Z facing the camera cleanly
-  geom.rotateY(0)
-  return geom
 }
 
 export default function CampaignLoopGallery({
@@ -174,31 +168,18 @@ export default function CampaignLoopGallery({
     host.appendChild(renderer.domElement)
 
     const scene = new THREE.Scene()
-    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 60)
-    camera.position.set(0, 0.15, 7.6)
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 60)
+    camera.position.set(0, 0.12, 6.7)
 
     const spiralGroup = new THREE.Group()
+    spiralGroup.position.y = -0.18
     scene.add(spiralGroup)
 
-    // Central Sculptural Glossy 3D Blobject Jelly-Glass Droplet
-    const orbGeo = new THREE.IcosahedronGeometry(0.92, 52)
-    const orbMat = new THREE.ShaderMaterial({
-      vertexShader: ORB_VERTEX,
-      fragmentShader: ORB_FRAGMENT,
-      transparent: true,
-      uniforms: {
-        uTime: { value: 0 },
-        uPulse: { value: 0 },
-        uPointer: { value: new THREE.Vector2(0, 0) },
-      },
-    })
-    const orbMesh = new THREE.Mesh(orbGeo, orbMat)
-    scene.add(orbMesh)
-
-    // 16 Physically Curved 3D Cylindrical Poster Meshes
     const loader = new THREE.TextureLoader()
     const maxAniso = renderer.capabilities.getMaxAnisotropy()
-    const baseRadius = 3.25
+
+    // Tighter sculptural 3D cylinder radius so posters sit closer & richer together
+    const baseRadius = 2.66
 
     const cardEntries = ARCHIVE_ITEMS.map((item, idx) => {
       const texture = loader.load(item.src)
@@ -207,14 +188,21 @@ export default function CampaignLoopGallery({
       texture.minFilter = THREE.LinearMipmapLinearFilter
       texture.magFilter = THREE.LinearFilter
 
-      const cardH = item.aspect < 0.65 ? 2.15 : 1.92
+      const cardH = item.aspect < 0.65 ? 2.04 : 1.84
       const geom = createCurvedPosterGeometry(baseRadius, cardH, item.aspect)
 
-      const mat = new THREE.MeshBasicMaterial({
-        map: texture,
+      const mat = new THREE.ShaderMaterial({
+        vertexShader: POSTER_VERTEX,
+        fragmentShader: POSTER_FRAGMENT,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 1,
+        uniforms: {
+          uMap: { value: texture },
+          uOpacity: { value: 1 },
+          uFrontFactor: { value: 1 },
+          uHover: { value: 0 },
+          uPointer: { value: new THREE.Vector2(0, 0) },
+        },
       })
 
       const pivot = new THREE.Group()
@@ -237,6 +225,7 @@ export default function CampaignLoopGallery({
     const raycaster = new THREE.Raycaster()
     const pointerNdc = new THREE.Vector2(-10, -10)
     let hoveredIdx = -1
+    let currentCamZ = 6.7
 
     const resize = () => {
       if (disposed) return
@@ -244,8 +233,9 @@ export default function CampaignLoopGallery({
       const h = host.clientHeight || window.innerHeight
       renderer.setSize(w, h, false)
       camera.aspect = w / Math.max(1, h)
-      const isNarrow = w < 720
-      camera.position.z = isNarrow ? 9.6 : 7.35
+      // Aspect-aware camera distance so narrow/split-pane & mobile screens frame the full 3D spiral cleanly
+      currentCamZ = camera.aspect < 0.75 ? 9.4 : camera.aspect < 1.25 ? 7.6 : 6.45
+      camera.position.z = currentCamZ
       camera.updateProjectionMatrix()
     }
     resize()
@@ -280,7 +270,7 @@ export default function CampaignLoopGallery({
         if (Math.abs(event.clientX - stateRef.current.startX) > 6) {
           stateRef.current.moved = true
         }
-        const delta = -dx / 150
+        const delta = -dx / 145
         stateRef.current.dragOffset += delta
         stateRef.current.angularVel = delta * 24
       }
@@ -325,10 +315,9 @@ export default function CampaignLoopGallery({
     host.addEventListener('click', onClick)
 
     let lastNow = performance.now()
-    let elapsed = 0
     const total = cardEntries.length
-    const angleStep = (Math.PI * 2) / 8.4 // ~8.4 curved posters per 360° helical turn
-    const helixPitch = 0.58 // vertical helical rise per slot
+    const angleStep = (Math.PI * 2) / 9.2 // dense, cohesive 3D cylindrical ribbon
+    const helixPitch = 0.42 // compact vertical helical pitch so prints stay close together
 
     const tick = (now: number) => {
       rafId = 0
@@ -336,15 +325,13 @@ export default function CampaignLoopGallery({
 
       const dt = Math.min(0.04, Math.max(0.001, (now - lastNow) / 1000))
       lastNow = now
-      elapsed += dt
 
       const st = stateRef.current
 
-      // Continuous silky helical drift + real angular throw momentum + scroll coupling
       if (!st.dragging && !reduced) {
-        const autoDrift = st.hovering ? 0.08 : 0.28
+        const autoDrift = st.hovering ? 0.06 : 0.24
         st.dragOffset += (autoDrift + st.angularVel) * dt
-        st.angularVel *= Math.exp(-3.6 * dt)
+        st.angularVel *= Math.exp(-3.8 * dt)
         if (Math.abs(st.angularVel) < 0.002) st.angularVel = 0
       }
 
@@ -355,23 +342,14 @@ export default function CampaignLoopGallery({
       st.smoothPX += (st.pointerX - st.smoothPX) * (1 - Math.exp(-6.5 * dt))
       st.smoothPY += (st.pointerY - st.smoothPY) * (1 - Math.exp(-6.5 * dt))
 
-      const baseCamZ = (host.clientWidth || window.innerWidth) < 720 ? 9.6 : 7.35
-      camera.position.x = st.smoothPX * 1.15
-      camera.position.y = 0.15 + st.smoothPY * 0.85
-      camera.position.z = baseCamZ - Math.abs(st.smoothPX) * 0.25
-      camera.lookAt(0, 0, 0)
+      camera.position.x = st.smoothPX * 0.95
+      camera.position.y = 0.12 + st.smoothPY * 0.68
+      camera.position.z = currentCamZ - Math.abs(st.smoothPX) * 0.22
+      camera.lookAt(0, -0.14, 0)
 
-      // Subtle architectural tilt on the whole spiral cylinder responding to pointer + spin velocity
-      spiralGroup.rotation.z = -0.09 + st.smoothPX * 0.06
-      spiralGroup.rotation.x = 0.08 - st.smoothPY * 0.08
-
-      // Animate central glossy Blobject orb
-      const spinSpeed = Math.min(1.6, Math.abs(st.angularVel) * 0.3 + Math.abs(desiredSpin - st.spinPos) * 0.45)
-      orbMat.uniforms.uTime.value = elapsed
-      orbMat.uniforms.uPulse.value = spinSpeed
-      orbMat.uniforms.uPointer.value.set(st.smoothPX, st.smoothPY)
-      orbMesh.rotation.y = elapsed * 0.28 + st.spinPos * 0.35
-      orbMesh.rotation.x = Math.sin(elapsed * 0.45) * 0.18 + st.smoothPY * 0.35
+      // Subtle architectural tilt reacting to pointer & velocity
+      spiralGroup.rotation.z = -0.075 + st.smoothPX * 0.055
+      spiralGroup.rotation.x = 0.06 - st.smoothPY * 0.07
 
       // 3D Raycast hover on curved cylinder posters
       raycaster.setFromCamera(pointerNdc, camera)
@@ -382,7 +360,6 @@ export default function CampaignLoopGallery({
       hoveredIdx = hits.length > 0 ? (hits[0].object.userData.index as number) : -1
       host.style.cursor = st.dragging ? 'grabbing' : hoveredIdx >= 0 ? 'pointer' : 'grab'
 
-      // Position all 16 physically curved posters along the infinite 3D helical spiral
       for (let i = 0; i < total; i += 1) {
         const entry = cardEntries[i]
         const u = wrapSlot(i - st.spinPos, total)
@@ -393,19 +370,21 @@ export default function CampaignLoopGallery({
 
         const angle = u * angleStep
         const y = -u * helixPitch
-        const radiusScale = 1 + entry.hover * 0.11
+        const radiusScale = 1 + entry.hover * 0.12
 
         entry.pivot.position.set(0, y, 0)
         entry.pivot.rotation.y = angle
         entry.pivot.scale.set(radiusScale, 1 + entry.hover * 0.05, radiusScale)
 
-        // Seamless helical fade at far top/bottom ends + realistic 3D depth shading
-        const edgeFade = absU > 5.8 ? Math.max(0, 1 - (absU - 5.8) / 1.8) : 1
-        const frontFactor = 0.5 + 0.5 * Math.cos(angle) // 1 at front, 0 at back of cylinder
-        const shade = 0.62 + 0.38 * frontFactor + entry.hover * 0.12
-        entry.mat.color.setRGB(Math.min(1.08, shade), Math.min(1.08, shade), Math.min(1.08, shade))
-        entry.mat.opacity = edgeFade * (0.48 + 0.52 * frontFactor)
-        entry.mesh.visible = entry.mat.opacity > 0.03
+        const edgeFade = absU > 6.4 ? Math.max(0, 1 - (absU - 6.4) / 2.0) : 1
+        const frontFactor = 0.5 + 0.5 * Math.cos(angle)
+        const opacity = edgeFade * (0.44 + 0.56 * frontFactor)
+
+        entry.mat.uniforms.uOpacity.value = opacity
+        entry.mat.uniforms.uFrontFactor.value = frontFactor
+        entry.mat.uniforms.uHover.value = entry.hover
+        entry.mat.uniforms.uPointer.value.set(st.smoothPX, st.smoothPY)
+        entry.mesh.visible = opacity > 0.03
       }
 
       renderer.render(scene, camera)
@@ -425,8 +404,6 @@ export default function CampaignLoopGallery({
       stage.removeEventListener('pointerenter', onPointerEnter)
       stage.removeEventListener('pointerleave', onPointerLeave)
       host.removeEventListener('click', onClick)
-      orbGeo.dispose()
-      orbMat.dispose()
       cardEntries.forEach(c => {
         c.geom.dispose()
         c.texture.dispose()
@@ -452,7 +429,7 @@ export default function CampaignLoopGallery({
         scrub: true,
         invalidateOnRefresh: true,
         onUpdate: self => {
-          stateRef.current.scrollOffset = self.progress * 10.5
+          stateRef.current.scrollOffset = self.progress * 11.5
         },
       })
       return () => trigger.kill()
@@ -469,11 +446,10 @@ export default function CampaignLoopGallery({
           </p>
         </div>
 
-        {/* ONE Unified Real 3D WebGL Curved Helical Spiral + Blobject Glass Orb */}
         <div
           ref={canvasHostRef}
           className="spiral-gallery__canvas-host"
-          aria-label="Interactive 3D helical spiral gallery of MOCHI campaigns and wallpapers"
+          aria-label="Interactive 3D helical spiral gallery of MOCHI campaigns, creators, and wallpapers"
         />
       </div>
     </section>

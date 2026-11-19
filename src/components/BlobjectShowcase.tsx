@@ -223,8 +223,7 @@ export default function BlobjectShowcase({
       const h = host.clientHeight || window.innerHeight
       renderer.setSize(w, h, false)
       camera.aspect = w / Math.max(1, h)
-      const isNarrow = w < 720
-      camera.position.z = isNarrow ? 6.4 : 5.25
+      camera.position.z = camera.aspect < 0.8 ? 7.1 : camera.aspect < 1.32 ? 6.15 : 5.25
       camera.updateProjectionMatrix()
     }
     resize()

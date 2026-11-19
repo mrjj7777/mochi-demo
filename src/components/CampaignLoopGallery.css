@@ -18,21 +18,22 @@
 .spiral-gallery__header {
   position: absolute;
   z-index: 4;
-  top: 72px;
-  left: 64px;
+  top: 68px;
+  left: clamp(20px, 4.5vw, 64px);
   pointer-events: none;
 }
 
 .spiral-gallery__title {
-  max-width: 11ch;
-  font-size: clamp(2rem, 3.5vw, 3.6rem) !important;
+  max-width: 12ch;
+  font-size: clamp(1.75rem, 3.1vw, 3.2rem) !important;
   line-height: 0.94 !important;
+  text-shadow: 0 2px 24px rgba(242, 237, 228, 0.85);
 }
 
 .spiral-gallery__title em {
   font-family: var(--emotion, 'Instrument Serif', Georgia, serif);
   font-style: italic;
-  font-size: 1.12em;
+  font-size: 1.14em;
 }
 
 .spiral-gallery__canvas-host {
@@ -51,11 +52,11 @@
 
 @media (max-width: 700px) {
   .spiral-gallery__header {
-    top: 66px;
-    left: 6vw;
+    top: 64px;
+    left: 20px;
   }
 
   .spiral-gallery__title {
-    font-size: clamp(2rem, 9.2vw, 3rem) !important;
+    font-size: clamp(1.7rem, 8.2vw, 2.5rem) !important;
   }
 }

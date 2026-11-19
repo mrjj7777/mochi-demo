@@ -17,7 +17,6 @@ export default function Hero({ onJump }: HeroProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const targetFrame = useRef(0)
   const currentFrame = useRef(0)
-  const progressRef = useRef(0)
   const framesRef = useRef<Array<HTMLImageElement | undefined>>([])
   const activeRef = useRef(true)
   const dirtyRef = useRef(true)
@@ -83,9 +82,16 @@ export default function Hero({ onJump }: HeroProps) {
       if (!imgA?.naturalWidth) return
       const imgB = frac > 0.02 ? findNearest(upper) : undefined
 
-      // Subtle cinematic slow-push scale as the wave progresses
-      const pushScale = 1.012 + progressRef.current * 0.032
-      const baseScale = Math.max(cachedW / imgA.naturalWidth, cachedH / imgA.naturalHeight) * pushScale
+      // Smart framing: keep ALL 6 MOCHI tubes completely uncropped on every aspect ratio.
+      // On widescreen (>= 1.55), cover cleanly with zero artificial zoom.
+      // On narrower/split-pane/tablet/mobile viewports (< 1.55), fit width cleanly and feather top/bottom into cream.
+      const viewAspect = cachedW / Math.max(1, cachedH)
+      const imgAspect = imgA.naturalWidth / Math.max(1, imgA.naturalHeight)
+      const fitByWidth = viewAspect < imgAspect * 0.88
+      const baseScale = fitByWidth
+        ? cachedW / imgA.naturalWidth
+        : Math.max(cachedW / imgA.naturalWidth, cachedH / imgA.naturalHeight)
+
       const drawW = imgA.naturalWidth * baseScale
       const drawH = imgA.naturalHeight * baseScale
       const drawX = (cachedW - drawW) * 0.5
@@ -97,13 +103,30 @@ export default function Hero({ onJump }: HeroProps) {
       ctx.globalAlpha = 1
       ctx.drawImage(imgA, drawX, drawY, drawW, drawH)
 
-      // Smooth fractional cross-fade between adjacent frames for silky cinema motion
       if (imgB && imgB !== imgA && imgB.naturalWidth) {
         ctx.globalAlpha = frac
         ctx.drawImage(imgB, drawX, drawY, drawW, drawH)
         ctx.globalAlpha = 1
       }
 
+      // Soft cream feather at top & bottom edges when letterboxed on square/portrait screens
+      if (fitByWidth && drawY > 2) {
+        const feather = Math.min(72, drawH * 0.16)
+        const topGrad = ctx.createLinearGradient(0, drawY, 0, drawY + feather)
+        topGrad.addColorStop(0, '#F2EDE4')
+        topGrad.addColorStop(1, 'rgba(242, 237, 228, 0)')
+        ctx.fillStyle = topGrad
+        ctx.fillRect(0, drawY - 1, cachedW, feather + 2)
+
+        const botY = drawY + drawH
+        const botGrad = ctx.createLinearGradient(0, botY - feather, 0, botY)
+        botGrad.addColorStop(0, 'rgba(242, 237, 228, 0)')
+        botGrad.addColorStop(1, '#F2EDE4')
+        ctx.fillStyle = botGrad
+        ctx.fillRect(0, botY - feather - 1, cachedW, feather + 2)
+      }
+
+      pin.classList.toggle('is-fitted', fitByWidth)
       lastDrawn = frameVal
       if (!pin.classList.contains('is-ready')) pin.classList.add('is-ready')
     }
@@ -119,7 +142,6 @@ export default function Hero({ onJump }: HeroProps) {
       if (reduced || Math.abs(diff) < 0.005) {
         currentFrame.current = targetFrame.current
       } else {
-        // Critically damped cinematic inertia (silky camera-dolly feel)
         const alpha = 1 - Math.exp(-8.5 * dt)
         currentFrame.current += diff * alpha
       }
@@ -158,11 +180,10 @@ export default function Hero({ onJump }: HeroProps) {
       img.src = index === 0 ? '/media/hero-seq-v4/poster.webp' : `${dir}/${String(index + 1).padStart(4, '0')}.webp`
     }
 
-    // Immediate frame 0, then prioritized sparse keyframes (every 6th), then full smooth backfill
     loadIndex(0)
     const timers: number[] = []
     for (let i = 6; i < count; i += 6) loadIndex(i)
-    let delay = 24
+    let delay = 22
     for (let i = 1; i < count; i += 1) {
       if (i % 6 === 0) continue
       const idx = i
@@ -226,17 +247,15 @@ export default function Hero({ onJump }: HeroProps) {
       const trigger = ScrollTrigger.create({
         trigger: hero,
         start: 'top top',
-        end: () => `+=${Math.round(window.innerHeight * (isMobile ? 1.7 : 2.4))}`,
+        end: () => `+=${Math.round(window.innerHeight * (isMobile ? 1.65 : 2.35))}`,
         pin,
         scrub: true,
         invalidateOnRefresh: true,
         onUpdate: self => {
           const p = self.progress
-          progressRef.current = p
           targetFrame.current = p * (count - 1)
           pin.dispatchEvent(new Event('mochi-hero-wake'))
 
-          // Headline enters cleanly 0.14 -> 0.34, holds, fades gracefully 0.82 -> 0.96
           const enter = Math.min(1, Math.max(0, (p - 0.14) / 0.2))
           const exit = 1 - Math.min(1, Math.max(0, (p - 0.82) / 0.14))
           const headline = enter * exit

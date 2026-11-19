@@ -69,8 +69,8 @@
   position: absolute;
   top: 50%;
   z-index: 4;
-  width: clamp(130px, 18vw, 248px);
-  height: min(46svh, 390px);
+  width: clamp(112px, 16vw, 236px);
+  height: min(44svh, 370px);
   display: grid;
   place-items: center;
   padding: 20px;
