@@ -9,7 +9,7 @@ gsap.registerPlugin(ScrollTrigger, useGSAP)
 type HeroProps = { onJump: (id: string) => void }
 
 const DESK_FRAMES = 172
-const MOB_FRAMES = 86
+const MOB_FRAMES = 58
 const FPS = 24
 
 function formatTimecode(frame: number) {
@@ -68,10 +68,11 @@ export default function Hero({ onJump }: HeroProps) {
     let lastNow = performance.now()
     let cachedW = 0
     let cachedH = 0
+    let lastWindowW = window.innerWidth
     let lastDrawnIndex = -1
     let lastTimecode = ''
 
-    // Subtle 65mm optical camera micro-parallax on pointer move (true push-in depth)
+    // Desktop-only subtle 65mm optical camera micro-parallax on pointer move
     let pointerX = 0
     let pointerY = 0
     let camX = 0
@@ -90,7 +91,7 @@ export default function Hero({ onJump }: HeroProps) {
     const drawFrame = (frameVal: number, force = false) => {
       if (disposed) return
       const clamped = Math.max(0, Math.min(count - 1, frameVal))
-      // Crisp integer cinema shutter — zero double-exposure ghosting on moving jelly tubes
+      // Crisp integer cinema shutter — zero double-exposure ghosting
       const frameIdx = Math.round(clamped)
       if (!force && frameIdx === lastDrawnIndex) return
 
@@ -101,7 +102,8 @@ export default function Hero({ onJump }: HeroProps) {
       }
       if (cachedW < 1 || cachedH < 1) return
 
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      // Cap mobile DPR to 1.5 for locked 60fps canvas blits on high-DPI phones
+      const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.5 : 2)
       const pxW = Math.max(1, Math.round(cachedW * dpr))
       const pxH = Math.max(1, Math.round(cachedH * dpr))
       if (canvas.width !== pxW || canvas.height !== pxH) {
@@ -112,26 +114,51 @@ export default function Hero({ onJump }: HeroProps) {
       const img = findNearest(frameIdx)
       if (!img?.naturalWidth) return
 
-      // Native 1:1 mastered pixel framing (watermark & edge bands already cleanly cropped in master)
-      const baseScale = Math.max(cachedW / img.naturalWidth, cachedH / img.naturalHeight)
-      const drawW = img.naturalWidth * baseScale
-      const drawH = img.naturalHeight * baseScale
-      const drawX = (cachedW - drawW) * 0.5
-      const drawY = (cachedH - drawH) * 0.5
-
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       ctx.imageSmoothingEnabled = true
       ctx.imageSmoothingQuality = 'high'
       ctx.fillStyle = '#F2EDE4'
       ctx.fillRect(0, 0, cachedW, cachedH)
-      ctx.drawImage(img, drawX, drawY, drawW, drawH)
+
+      if (isMobile) {
+        // Full 6-tube editorial cinema fit: all 6 MOCHI tubes 100% visible edge-to-edge on every phone!
+        const fitScale = Math.min(cachedW / img.naturalWidth, (cachedH * 0.62) / img.naturalHeight)
+        const drawW = img.naturalWidth * fitScale
+        const drawH = img.naturalHeight * fitScale
+        const drawX = (cachedW - drawW) * 0.5
+        const drawY = (cachedH - drawH) * 0.5 + cachedH * 0.02
+
+        ctx.drawImage(img, drawX, drawY, drawW, drawH)
+
+        // Seamless vertical cream studio cyclorama dissolve on top & bottom edges (zero harsh bars)
+        const fadeH = Math.max(24, drawH * 0.16)
+        const topGrad = ctx.createLinearGradient(0, drawY - 2, 0, drawY + fadeH)
+        topGrad.addColorStop(0, '#F2EDE4')
+        topGrad.addColorStop(1, 'rgba(242, 237, 228, 0)')
+        ctx.fillStyle = topGrad
+        ctx.fillRect(0, drawY - 4, cachedW, fadeH + 4)
+
+        const botGrad = ctx.createLinearGradient(0, drawY + drawH - fadeH, 0, drawY + drawH + 2)
+        botGrad.addColorStop(0, 'rgba(242, 237, 228, 0)')
+        botGrad.addColorStop(1, '#F2EDE4')
+        ctx.fillStyle = botGrad
+        ctx.fillRect(0, drawY + drawH - fadeH, cachedW, fadeH + 4)
+      } else {
+        // Desktop: native 1:1 mastered 1920x1080 full-bleed cover framing
+        const baseScale = Math.max(cachedW / img.naturalWidth, cachedH / img.naturalHeight)
+        const drawW = img.naturalWidth * baseScale
+        const drawH = img.naturalHeight * baseScale
+        const drawX = (cachedW - drawW) * 0.5
+        const drawY = (cachedH - drawH) * 0.5
+        ctx.drawImage(img, drawX, drawY, drawW, drawH)
+      }
 
       lastDrawnIndex = frameIdx
       if (!pin.classList.contains('is-ready')) pin.classList.add('is-ready')
 
       // Live scroll-synced timecode & progress hairline (zero React re-renders)
       const normP = count > 1 ? frameIdx / (count - 1) : 0
-      const tc = formatTimecode(isMobile ? frameIdx * 2 : frameIdx)
+      const tc = formatTimecode(isMobile ? Math.round(normP * (DESK_FRAMES - 1)) : frameIdx)
       if (timecodeRef.current && tc !== lastTimecode) {
         timecodeRef.current.textContent = `${tc} — 24FPS`
         lastTimecode = tc
@@ -153,39 +180,45 @@ export default function Hero({ onJump }: HeroProps) {
       if (reduced || Math.abs(diff) < 0.005) {
         currentFrame.current = targetFrame.current
       } else {
-        const alpha = 1 - Math.exp(-10.5 * dt)
+        const damping = isMobile ? 16 : 10.5
+        const alpha = 1 - Math.exp(-damping * dt)
         currentFrame.current += diff * alpha
       }
 
-      // Smooth 65mm micro-parallax & gentle scroll-exit recede (keeps 1:1 sharpness at rest)
-      const camAlpha = 1 - Math.exp(-6.5 * dt)
-      camX += (pointerX - camX) * camAlpha
-      camY += (pointerY - camY) * camAlpha
-
+      // Desktop 65mm micro-parallax; mobile keeps pure zero-overhead GPU transform
       const scrollP = scrollProgressRef.current
-      const exitRecede = Math.min(1, Math.max(0, (scrollP - 0.68) / 0.32)) * 0.055
-      const liveScale = 1 - exitRecede
-      const tx = reduced || isMobile ? 0 : -camX * 10
-      const ty = reduced || isMobile ? 0 : -camY * 6
-      const rotY = reduced || isMobile ? 0 : camX * 0.9
-      const rotX = reduced || isMobile ? 0 : -camY * 0.6
-
-      if (
-        Math.abs(tx) < 0.05 &&
-        Math.abs(ty) < 0.05 &&
-        Math.abs(rotY) < 0.01 &&
-        Math.abs(rotX) < 0.01 &&
-        Math.abs(1 - liveScale) < 0.0005
-      ) {
-        media.style.transform = 'none'
+      if (isMobile) {
+        const mobExit = Math.min(1, Math.max(0, (scrollP - 0.78) / 0.22)) * 0.04
+        media.style.transform = mobExit > 0.001 ? `scale(${(1 - mobExit).toFixed(4)})` : 'none'
       } else {
-        media.style.transform = `perspective(1600px) translate3d(${tx.toFixed(2)}px, ${ty.toFixed(2)}px, 0) rotateY(${rotY.toFixed(3)}deg) rotateX(${rotX.toFixed(3)}deg) scale(${liveScale.toFixed(4)})`
+        const camAlpha = 1 - Math.exp(-6.5 * dt)
+        camX += (pointerX - camX) * camAlpha
+        camY += (pointerY - camY) * camAlpha
+
+        const exitRecede = Math.min(1, Math.max(0, (scrollP - 0.68) / 0.32)) * 0.055
+        const liveScale = 1 - exitRecede
+        const tx = reduced ? 0 : -camX * 10
+        const ty = reduced ? 0 : -camY * 6
+        const rotY = reduced ? 0 : camX * 0.9
+        const rotX = reduced ? 0 : -camY * 0.6
+
+        if (
+          Math.abs(tx) < 0.05 &&
+          Math.abs(ty) < 0.05 &&
+          Math.abs(rotY) < 0.01 &&
+          Math.abs(rotX) < 0.01 &&
+          Math.abs(1 - liveScale) < 0.0005
+        ) {
+          media.style.transform = 'none'
+        } else {
+          media.style.transform = `perspective(1600px) translate3d(${tx.toFixed(2)}px, ${ty.toFixed(2)}px, 0) rotateY(${rotY.toFixed(3)}deg) rotateX(${rotX.toFixed(3)}deg) scale(${liveScale.toFixed(4)})`
+        }
       }
 
       drawFrame(currentFrame.current, dirtyRef.current)
       dirtyRef.current = false
 
-      const camMoving = Math.abs(pointerX - camX) > 0.002 || Math.abs(pointerY - camY) > 0.002
+      const camMoving = !isMobile && (Math.abs(pointerX - camX) > 0.002 || Math.abs(pointerY - camY) > 0.002)
       const frameMoving = !reduced && Math.abs(targetFrame.current - currentFrame.current) >= 0.005
       if (frameMoving || camMoving) {
         rafId = requestAnimationFrame(tick)
@@ -200,16 +233,17 @@ export default function Hero({ onJump }: HeroProps) {
       }
     }
 
-    // Fast concurrent frame streaming queue (8 in-flight, opening frames + stride first)
+    // Fast concurrent frame streaming queue (4 concurrent on mobile, 8 on desktop)
     const queue: number[] = []
-    for (let i = 0; i < Math.min(count, 24); i += 1) queue.push(i)
-    for (let i = 24; i < count; i += 4) queue.push(i)
-    for (let i = 24; i < count; i += 1) {
-      if ((i - 24) % 4 !== 0) queue.push(i)
+    const burst = isMobile ? 16 : 24
+    for (let i = 0; i < Math.min(count, burst); i += 1) queue.push(i)
+    for (let i = burst; i < count; i += 3) queue.push(i)
+    for (let i = burst; i < count; i += 1) {
+      if ((i - burst) % 3 !== 0) queue.push(i)
     }
 
     let cursor = 0
-    const MAX_CONCURRENT = 8
+    const MAX_CONCURRENT = isMobile ? 4 : 8
     const loadNext = () => {
       if (disposed || cursor >= queue.length) return
       const index = queue[cursor++]
@@ -254,6 +288,9 @@ export default function Hero({ onJump }: HeroProps) {
     }
 
     const onResize = () => {
+      // Ignore mobile browser URL-bar vertical resize jitter
+      if (isMobile && Math.abs(window.innerWidth - lastWindowW) < 2) return
+      lastWindowW = window.innerWidth
       const rect = canvas.getBoundingClientRect()
       cachedW = rect.width
       cachedH = rect.height
@@ -277,8 +314,10 @@ export default function Hero({ onJump }: HeroProps) {
 
     const onWakeEvent = () => wake()
     pin.addEventListener('mochi-hero-wake', onWakeEvent)
-    pin.addEventListener('pointermove', onPointerMove, { passive: true })
-    pin.addEventListener('pointerleave', onPointerLeave)
+    if (!isMobile) {
+      pin.addEventListener('pointermove', onPointerMove, { passive: true })
+      pin.addEventListener('pointerleave', onPointerLeave)
+    }
     window.addEventListener('resize', onResize, { passive: true })
     document.addEventListener('visibilitychange', onVisibility)
 
@@ -312,7 +351,7 @@ export default function Hero({ onJump }: HeroProps) {
       const trigger = ScrollTrigger.create({
         trigger: hero,
         start: 'top top',
-        end: () => `+=${Math.round(window.innerHeight * (isMobile ? 2.1 : 3.0))}`,
+        end: () => `+=${Math.round(window.innerHeight * (isMobile ? 1.45 : 3.0))}`,
         pin: true,
         pinSpacing: true,
         anticipatePin: 1,
@@ -322,16 +361,19 @@ export default function Hero({ onJump }: HeroProps) {
           const p = self.progress
           scrollProgressRef.current = p
 
-          // Strictly scroll-linked 6-tube squish wave before Belief shutter sweeps up
-          const waveP = Math.min(1, p / 0.72)
+          // Mobile uses 92% of pin travel for the full 6-tube squish wave; desktop uses 72% before shutter
+          const waveLimit = isMobile ? 0.92 : 0.72
+          const waveP = Math.min(1, p / waveLimit)
           targetFrame.current = waveP * (count - 1)
           pin.dispatchEvent(new Event('mochi-hero-wake'))
 
-          const enter = Math.min(1, Math.max(0, (waveP - 0.12) / 0.22))
-          const exit = 1 - Math.min(1, Math.max(0, (p - 0.66) / 0.14))
+          const enter = isMobile
+            ? Math.min(1, Math.max(0.18, 0.18 + waveP * 1.15))
+            : Math.min(1, Math.max(0, (waveP - 0.12) / 0.22))
+          const exit = 1 - Math.min(1, Math.max(0, (p - (isMobile ? 0.84 : 0.66)) / 0.14))
           const headline = enter * exit
-          const cueOpacity = Math.max(0, 1 - p * 12)
-          const shutterP = Math.min(1, Math.max(0, (p - 0.66) / 0.34))
+          const cueOpacity = Math.max(0, 1 - p * 9)
+          const shutterP = Math.min(1, Math.max(0, (p - (isMobile ? 0.78 : 0.66)) / (isMobile ? 0.22 : 0.34)))
 
           pin.style.setProperty('--hero-progress', p.toFixed(4))
           pin.style.setProperty('--hero-headline-progress', headline.toFixed(4))
@@ -352,7 +394,7 @@ export default function Hero({ onJump }: HeroProps) {
         style={
           {
             '--hero-progress': 0,
-            '--hero-headline-progress': 0,
+            '--hero-headline-progress': isMobile ? 0.18 : 0,
             '--hero-cue-opacity': 1,
             '--hero-exit-fade': 0,
           } as React.CSSProperties
@@ -364,7 +406,7 @@ export default function Hero({ onJump }: HeroProps) {
             src={isMobile ? '/media/hero-seq-1920/poster-mob.webp' : '/media/hero-seq-1920/poster.webp'}
             alt="Six MOCHI lip jelly tubes"
             width={isMobile ? 720 : 1920}
-            height={isMobile ? 1280 : 1080}
+            height={isMobile ? 456 : 1080}
             loading="eager"
             decoding="sync"
             fetchPriority="high"

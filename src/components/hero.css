@@ -224,39 +224,58 @@
 @media (max-width: 767px) {
   .mochi-hero__pin {
     min-height: 100svh;
+    background:
+      radial-gradient(ellipse 92% 46% at 50% 52%, rgba(246, 211, 214, 0.34) 0%, rgba(242, 237, 228, 0) 76%),
+      var(--cream, #F2EDE4);
   }
 
   .mochi-hero__media {
     inset: 0;
   }
 
+  /* Show ALL 6 MOCHI tubes cleanly across full phone width with seamless top/bottom studio blend */
+  .mochi-hero__poster {
+    object-fit: contain;
+    object-position: center 52%;
+    -webkit-mask-image: linear-gradient(180deg, transparent 22%, #000 32%, #000 72%, transparent 82%);
+    mask-image: linear-gradient(180deg, transparent 22%, #000 32%, #000 72%, transparent 82%);
+  }
+
+  .mochi-hero__cinema-grade {
+    background: none;
+  }
+
   .mochi-hero__headline {
-    top: calc(env(safe-area-inset-top, 0px) + 74px);
-    width: calc(100% - 40px);
+    top: calc(env(safe-area-inset-top, 0px) + 12.5svh);
+    width: calc(100% - 32px);
+    clip-path: none;
+    opacity: calc(0.88 + var(--hero-headline-progress, 0) * 0.12);
+    transform: translate3d(-50%, calc((1 - var(--hero-headline-progress, 0)) * 0.65rem), 0);
   }
 
   .mochi-hero__headline span {
-    font-size: clamp(1.75rem, 8.2vw, 2.8rem);
+    font-size: clamp(1.85rem, 8.6vw, 2.75rem);
   }
 
   .mochi-hero__headline em {
-    font-size: clamp(2.1rem, 9.6vw, 3.3rem);
+    font-size: clamp(2.25rem, 10.4vw, 3.35rem);
   }
 
   .mochi-hero__mono {
-    left: 20px;
-    right: 20px;
-    bottom: max(1.5rem, env(safe-area-inset-bottom));
-    font-size: 11px;
+    left: 50%;
+    right: auto;
+    bottom: max(5.6rem, calc(env(safe-area-inset-bottom) + 4.4rem));
+    transform: translateX(-50%);
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    opacity: calc(var(--hero-cue-opacity, 1) * 0.72);
   }
 
   .mochi-hero__scroll-cue {
     left: 50%;
-    bottom: max(4rem, calc(env(safe-area-inset-bottom) + 2.5rem));
-    font-size: 11px;
+    bottom: max(1.4rem, calc(env(safe-area-inset-bottom) + 0.85rem));
+    font-size: 10.5px;
   }
 
   .mochi-hero__hud-right {

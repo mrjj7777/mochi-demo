@@ -328,18 +328,20 @@
   .campaign-gallery__track {
     display: flex;
     flex-wrap: nowrap;
-    gap: 4vw;
-    padding: 0 8vw;
+    gap: 3.5vw;
+    padding: 14px 14vw 20px;
   }
 
   .campaign-strip__item {
-    width: 84vw;
+    width: 72vw;
     scroll-snap-align: center;
     scroll-snap-stop: always;
+    will-change: transform, opacity;
+    transform-origin: center center;
   }
 
   .campaign-strip__img {
-    width: 84vw;
+    width: 72vw;
     height: auto;
   }
 

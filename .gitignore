@@ -5,3 +5,5 @@ work/
 qa/page@*.webm
 .venv-assets/
 .vercel/
+
+.vercel

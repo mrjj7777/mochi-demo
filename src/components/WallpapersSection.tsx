@@ -7,6 +7,7 @@ type WallpaperItem = {
   key: string
   name: string
   src: string
+  thumbSrc: string
   label: string
   alt: string
 }
@@ -15,6 +16,7 @@ const WALLPAPERS: WallpaperItem[] = flavours.map(item => ({
   key: item.key,
   name: item.name,
   src: `/media/wallpapers/mochi-${item.asset}-1290x2796.png`,
+  thumbSrc: `/media/wallpapers/thumbs/mochi-${item.asset}-540.webp`,
   label: `1290 × 2796 — ${item.name}`,
   alt: `MOCHI ${item.name.toLowerCase()} phone wallpaper (1290 × 2796)`,
 }))
@@ -139,10 +141,10 @@ export default function WallpapersSection() {
               aria-label={`Preview ${item.label}`}
             >
               <img
-                src={item.src}
+                src={item.thumbSrc}
                 alt={item.alt}
-                width={1290}
-                height={2796}
+                width={540}
+                height={1170}
                 loading="lazy"
                 decoding="async"
                 className="wp-item__img"

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { clamp, hexToRgb, lerpRgb } from '../physics'
 
 type AuraPair = { ring: [number, number, number]; glow: [number, number, number] }
@@ -14,16 +14,34 @@ function parsePair(value: string | undefined): AuraPair {
   } catch { return fallback }
 }
 
-/** One low-cost canvas behind the page. Section `data-aura="#ring,#glow"` values blend over 40vh. */
+/**
+ * Low-cost ambient aura behind the page.
+ * Desktop: lightweight WebGL shader with idle sleep.
+ * Mobile / touch: zero-WebGL pure CSS hardware radial glow for locked 60fps mobile performance.
+ */
 export default function GlobalAura({ activeAura, activeGlow, sectionSelector = '[data-aura]', className = '' }: GlobalAuraProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const activeRef = useRef({ ring: hexToRgb(activeAura ?? '#2FA4A8'), glow: hexToRgb(activeGlow ?? '#E46A8E') })
+  const [isMobileAura, setIsMobileAura] = useState(() =>
+    typeof window !== 'undefined'
+      ? window.matchMedia('(max-width: 767px), (hover: none) and (pointer: coarse)').matches
+      : false,
+  )
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px), (hover: none) and (pointer: coarse)')
+    const sync = () => setIsMobileAura(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
 
   useEffect(() => {
     activeRef.current = { ring: hexToRgb(activeAura ?? '#2FA4A8'), glow: hexToRgb(activeGlow ?? '#E46A8E') }
   }, [activeAura, activeGlow])
 
   useEffect(() => {
+    if (isMobileAura) return
     const canvas = canvasRef.current
     if (!canvas) return
     const gl = canvas.getContext('webgl', { alpha: true, antialias: false, premultipliedAlpha: true })
@@ -82,8 +100,6 @@ export default function GlobalAura({ activeAura, activeGlow, sectionSelector = '
       let toIndex = fromIndex
       let mix = 0
 
-      // Blend only around a section boundary, over 40vh, so a tall section keeps
-      // its aura instead of drifting toward the next colour at its top edge.
       for (let index = 0; index < rects.length - 1; index += 1) {
         const boundary = rects[index].bottom
         const start = boundary - distance * .5
@@ -136,7 +152,22 @@ export default function GlobalAura({ activeAura, activeGlow, sectionSelector = '
     const onMotionPreference = () => wake()
     resize(); updateTarget(); window.addEventListener('resize', resize); window.addEventListener('scroll', onScroll, { passive: true }); window.addEventListener('pointermove', onPointer, { passive: true }); reducedMotion.addEventListener?.('change', onMotionPreference); wake()
     return () => { disposed = true; if (frame) cancelAnimationFrame(frame); window.removeEventListener('resize', resize); window.removeEventListener('scroll', onScroll); window.removeEventListener('pointermove', onPointer); reducedMotion.removeEventListener?.('change', onMotionPreference); gl.deleteProgram(program); gl.deleteShader(vertex); gl.deleteShader(fragment); gl.deleteBuffer(buffer) }
-  }, [sectionSelector])
+  }, [sectionSelector, isMobileAura])
+
+  if (isMobileAura) {
+    return (
+      <div
+        className={`global-aura global-aura--mobile ${className}`}
+        aria-hidden="true"
+        style={
+          {
+            '--mob-aura': activeAura ?? '#F6D3D6',
+            '--mob-glow': activeGlow ?? '#B3122E',
+          } as React.CSSProperties
+        }
+      />
+    )
+  }
 
   return <canvas ref={canvasRef} className={`global-aura ${className}`} aria-hidden="true" />
 }

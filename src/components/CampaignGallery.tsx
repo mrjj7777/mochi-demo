@@ -565,35 +565,61 @@ export default function CampaignGallery({ reduced = false }: { reduced?: boolean
     }
   }, [isMobile, items, reduced])
 
-  // Mobile (< 768px): Native horizontal scroll-snap strip counter tracking
+  // Mobile (< 768px): 60fps native scroll-snap strip with real-time 3D perspective carousel tilt & depth scale
   useEffect(() => {
     if (!isMobile) return
     const viewport = viewportRef.current
     if (!viewport) return
 
-    const onScroll = () => {
-      const maxScroll = Math.max(1, viewport.scrollWidth - viewport.clientWidth)
-      const ratio = clamp(viewport.scrollLeft / maxScroll, 0, 1)
-      setProgress(ratio)
+    let rafId = 0
 
-      const viewCenter = viewport.scrollLeft + viewport.clientWidth * 0.5
+    const updateCards = () => {
+      rafId = 0
+      const vw = Math.max(1, viewport.clientWidth)
+      const maxScroll = Math.max(1, viewport.scrollWidth - vw)
+      const ratio = clamp(viewport.scrollLeft / maxScroll, 0, 1)
+      setProgress(prev => (Math.abs(prev - ratio) < 0.002 ? prev : ratio))
+
+      const viewCenter = viewport.scrollLeft + vw * 0.5
       let closestIdx = 0
       let closestDist = Number.POSITIVE_INFINITY
+
       cardRefs.current.forEach((el, idx) => {
         if (!el) return
         const center = el.offsetLeft + el.offsetWidth * 0.5
-        const dist = Math.abs(center - viewCenter)
-        if (dist < closestDist) {
-          closestDist = dist
+        const delta = center - viewCenter
+        const absDist = Math.abs(delta)
+        if (absDist < closestDist) {
+          closestDist = absDist
           closestIdx = idx
         }
+
+        // Only animate cards near the viewport for locked 60fps mobile GPU efficiency
+        if (absDist < vw * 1.45) {
+          const norm = clamp(delta / (vw * 0.88), -1.15, 1.15)
+          const absNorm = Math.abs(norm)
+          const rotY = -norm * 14
+          const scale = 1 - absNorm * 0.1
+          const liftY = absNorm * 10
+          const opacity = clamp(1 - absNorm * 0.34, 0.58, 1)
+          el.style.transform = `perspective(920px) translate3d(0, ${liftY.toFixed(1)}px, 0) rotateY(${rotY.toFixed(2)}deg) scale(${scale.toFixed(4)})`
+          el.style.opacity = opacity.toFixed(3)
+        }
       })
-      setActiveIndex(closestIdx)
+
+      setActiveIndex(prev => (prev === closestIdx ? prev : closestIdx))
     }
 
-    onScroll()
+    const onScroll = () => {
+      if (!rafId) rafId = requestAnimationFrame(updateCards)
+    }
+
+    updateCards()
     viewport.addEventListener('scroll', onScroll, { passive: true })
-    return () => viewport.removeEventListener('scroll', onScroll)
+    return () => {
+      viewport.removeEventListener('scroll', onScroll)
+      if (rafId) cancelAnimationFrame(rafId)
+    }
   }, [isMobile, items.length])
 
   const openLightbox = useCallback((idx: number) => {

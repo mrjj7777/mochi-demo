@@ -107,9 +107,9 @@ export default function Belief() {
       const sq = clamp(squeezeSpring.value, -0.1, 1.15)
       const recoil = releaseOvershoot.value
 
-      const isMobile = window.innerWidth <= 700
-      const maxSpreadPx = isMobile ? 42 : 76
-      const maxPressPx = isMobile ? 22 : 40
+      const isMobile = window.innerWidth <= 767
+      const maxSpreadPx = isMobile ? 38 : 76
+      const maxPressPx = isMobile ? 18 : 40
 
       LINES.forEach((line, lineIdx) => {
         const wordEl = wordRefs.current[lineIdx]
@@ -119,46 +119,46 @@ export default function Belief() {
         // Line-level vertical travel: spread apart at rest, locked tightly together under squeeze
         let lineY = 0
         if (line.role === -1) {
-          lineY = -spread * maxSpreadPx + sq * maxPressPx - recoil * (isMobile ? 8 : 14)
+          lineY = -spread * maxSpreadPx + sq * maxPressPx - recoil * (isMobile ? 7 : 14)
         } else if (line.role === 1) {
-          lineY = spread * maxSpreadPx - sq * maxPressPx + recoil * (isMobile ? 8 : 14)
+          lineY = spread * maxSpreadPx - sq * maxPressPx + recoil * (isMobile ? 7 : 14)
         } else {
           // Center line absorbs micro vertical shift from scroll velocity
           lineY = clamp(velocityRef.current * 2.2, -10, 10) * (0.25 + sq * 0.75)
         }
 
-        // Line-level compression & Poisson volume preservation (scaleY drops -> scaleX expands cleanly)
+        // Line-level compression & Poisson volume preservation (100% GPU transform — ZERO layout reflow)
         const compressStrength = line.role === 0 ? 0.32 : 0.22
         const lineScaleY = clamp(1 - sq * compressStrength + recoil * 0.045, 0.64, 1.08)
         const lineScaleX = clamp(1 / Math.pow(lineScaleY, 0.44), 0.96, 1.18)
-        const trackTighten = -sq * (line.role === 0 ? 0.022 : 0.015)
 
         if (wordEl) {
           wordEl.style.transform = `translate3d(0, ${lineY.toFixed(2)}px, 0) scale(${lineScaleX.toFixed(4)}, ${lineScaleY.toFixed(4)})`
-          wordEl.style.letterSpacing = `${(-0.045 + trackTighten).toFixed(4)}em`
         }
 
-        // Per-character micro-elasticity: center characters bear slightly deeper barrel strain & subtle outward push
-        chars.forEach((_, charIdx) => {
-          const normDist = mid > 0 ? (charIdx - mid) / mid : 0 // -1..+1
-          const centerWeight = 1 - Math.min(1, Math.abs(normDist)) * 0.55
-          const cSpring = charSprings[lineIdx][charIdx]
-          cSpring.target = sq * centerWeight
+        // Per-character micro-elasticity on desktop; mobile stays locked 60fps via word-level elastomer transforms
+        if (!isMobile) {
+          chars.forEach((_, charIdx) => {
+            const normDist = mid > 0 ? (charIdx - mid) / mid : 0 // -1..+1
+            const centerWeight = 1 - Math.min(1, Math.abs(normDist)) * 0.55
+            const cSpring = charSprings[lineIdx][charIdx]
+            cSpring.target = sq * centerWeight
 
-          // Subtle physical phase lag from center outward
-          const stiffness = 175 - Math.abs(normDist) * 32
-          stepViscous(cSpring, dt, stiffness, 20, 1.25)
+            // Subtle physical phase lag from center outward
+            const stiffness = 175 - Math.abs(normDist) * 32
+            stepViscous(cSpring, dt, stiffness, 20, 1.25)
 
-          const charEl = charRefs.current[lineIdx]?.[charIdx]
-          if (charEl) {
-            const cSq = clamp(cSpring.value, -0.08, 1.15)
-            // Outer characters subtly push outward as inner material compresses (real elastomer Poisson bulge)
-            const bulgeX = normDist * cSq * (isMobile ? 3.5 : 7.5)
-            const cScaleY = clamp(1 - cSq * (line.role === 0 ? 0.09 : 0.06), 0.88, 1.04)
-            const cScaleX = clamp(1 / Math.pow(cScaleY, 0.5), 0.97, 1.07)
-            charEl.style.transform = `translate3d(${bulgeX.toFixed(2)}px, 0, 0) scale(${cScaleX.toFixed(4)}, ${cScaleY.toFixed(4)})`
-          }
-        })
+            const charEl = charRefs.current[lineIdx]?.[charIdx]
+            if (charEl) {
+              const cSq = clamp(cSpring.value, -0.08, 1.15)
+              // Outer characters subtly push outward as inner material compresses (real elastomer Poisson bulge)
+              const bulgeX = normDist * cSq * 7.5
+              const cScaleY = clamp(1 - cSq * (line.role === 0 ? 0.09 : 0.06), 0.88, 1.04)
+              const cScaleX = clamp(1 / Math.pow(cScaleY, 0.5), 0.97, 1.07)
+              charEl.style.transform = `translate3d(${bulgeX.toFixed(2)}px, 0, 0) scale(${cScaleX.toFixed(4)}, ${cScaleY.toFixed(4)})`
+            }
+          })
+        }
       })
 
       const settled =
@@ -212,11 +212,11 @@ export default function Belief() {
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       if (reduced) return
 
-      const isMobile = window.matchMedia('(max-width: 700px)').matches
+      const isMobile = window.matchMedia('(max-width: 767px)').matches
       const trigger = ScrollTrigger.create({
         trigger: section,
         start: 'top top',
-        end: () => `+=${Math.round(window.innerHeight * (isMobile ? 1.65 : 2.3))}`,
+        end: () => `+=${Math.round(window.innerHeight * (isMobile ? 1.2 : 2.3))}`,
         pin: true,
         pinSpacing: true,
         anticipatePin: 1,

@@ -1693,6 +1693,22 @@ html { scrollbar-color: var(--jelly) var(--cream); scrollbar-width: thin; }
 }
 
 @media (max-width: 767px) {
+  .global-aura--mobile {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 26% 24%, color-mix(in srgb, var(--mob-aura, #F6D3D6) 28%, transparent) 0%, transparent 56%),
+      radial-gradient(circle at 76% 74%, color-mix(in srgb, var(--mob-glow, #B3122E) 14%, transparent) 0%, transparent 54%);
+    transition: background 600ms ease;
+  }
+
+  /* Prevent mobile URL-bar overlap/jump glitch between Hero pin and Belief */
+  .shutter-over-hero {
+    margin-top: 0 !important;
+  }
+
   .site-nav {
     top: 16px;
     left: 16px;
@@ -1716,20 +1732,87 @@ html { scrollbar-color: var(--jelly) var(--cream); scrollbar-width: thin; }
     display: none;
   }
 
+  /* Enable buttery native horizontal swipe + snap across all 6 shades while keeping bottom tabs pinned */
+  .flavours {
+    height: 100svh;
+    min-height: 100svh;
+    overflow: hidden !important;
+  }
+
+  .flavours__scroller {
+    width: 100%;
+    height: 100svh;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .flavours__scroller::-webkit-scrollbar {
+    display: none;
+  }
+
+  .flavours__track {
+    display: flex;
+    width: max-content;
+    height: 100svh;
+  }
+
+  .flavour-panel__ctas {
+    flex-wrap: nowrap;
+    gap: 20px;
+  }
+
+  .flavour-panel__ctas .add-pill {
+    white-space: nowrap;
+  }
+
+  .flavour-panel {
+    flex: 0 0 100vw;
+    width: 100vw;
+    height: 100svh;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+  }
+
+  /* Restore monumental colour shade typography behind interactive tube on mobile */
+  .flavour-panel__name {
+    display: grid !important;
+    font-size: clamp(3.1rem, 16.5vw, 5.2rem) !important;
+    padding-bottom: 10svh !important;
+    opacity: 0.9 !important;
+  }
+
   .flavour-panel__label,
   .flavour-panel__index {
     top: 56px;
   }
 
   .flavour-tube {
-    width: 72vw;
-    height: 48svh;
-    max-height: 430px;
+    width: 66vw;
+    height: 46svh;
+    max-height: 400px;
+  }
+
+  .flavour-panel__footer {
+    bottom: 10.5svh;
+    gap: 10px;
+  }
+
+  .flavour-panel__footer .flavour-panel__mood {
+    display: block !important;
+    font-size: 15px !important;
   }
 
   .flavour-dots {
     gap: 14px;
     bottom: 20px;
+  }
+
+  .texture {
+    min-height: 88svh;
   }
 
   .texture__line {
@@ -1743,8 +1826,13 @@ html { scrollbar-color: var(--jelly) var(--cream); scrollbar-width: thin; }
   }
 
   .stand {
-    min-height: 86svh;
+    min-height: 82svh;
     padding: 8vh 20px 7vh;
+  }
+
+  .stand__bleed .stand__image {
+    width: 96vw;
+    height: 62svh;
   }
 
   .footer {

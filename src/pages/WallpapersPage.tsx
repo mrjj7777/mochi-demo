@@ -16,6 +16,7 @@ const PRINTS = flavours.map((f, i) => ({
   jelly: f.jelly,
   aura: f.aura,
   src: `/media/wallpapers/mochi-${f.asset}-1290x2796.png`,
+  thumbSrc: `/media/wallpapers/thumbs/mochi-${f.asset}-540.webp`,
   label: `1290 × 2796 — ${f.name}`,
   alt: `MOCHI ${f.name.toLowerCase()} phone wallpaper (1290 × 2796)`,
 }))
@@ -69,19 +70,19 @@ export default function WallpapersPage({
         const img = spread.querySelector<HTMLElement>('.wpe-spread__img')
         const copy = spread.querySelector<HTMLElement>('.wpe-spread__copy')
 
+        const isMobile = window.matchMedia('(max-width: 767px)').matches
         if (frame) {
           gsap.fromTo(
             frame,
-            { clipPath: 'inset(10% 0% 10% 0%)', y: 42 },
+            isMobile ? { y: 32, scale: 0.94, opacity: 0.55 } : { clipPath: 'inset(10% 0% 10% 0%)', y: 42 },
             {
-              clipPath: 'inset(0% 0% 0% 0%)',
-              y: -28,
+              ...(isMobile ? { y: 0, scale: 1, opacity: 1 } : { clipPath: 'inset(0% 0% 0% 0%)', y: -28 }),
               ease: 'none',
               scrollTrigger: {
                 trigger: spread,
                 start: 'top bottom',
-                end: 'bottom top',
-                scrub: 0.75,
+                end: isMobile ? 'center 58%' : 'bottom top',
+                scrub: isMobile ? 0.35 : 0.75,
               },
             },
           )
@@ -173,10 +174,10 @@ export default function WallpapersPage({
               aria-label={`Open fullscreen proof for ${p.label}`}
             >
               <img
-                src={p.src}
+                src={p.thumbSrc}
                 alt={p.alt}
-                width={1290}
-                height={2796}
+                width={540}
+                height={1170}
                 loading={idx < 2 ? 'eager' : 'lazy'}
                 decoding="async"
                 className="wpe-spread__img"

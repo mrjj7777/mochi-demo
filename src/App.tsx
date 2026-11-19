@@ -19,6 +19,7 @@ import WallpapersPage from './pages/WallpapersPage'
 import { PointerHistory, clamp, createSpring, projectMomentum, rubberBand } from './physics'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
+ScrollTrigger.config({ ignoreMobileResize: true })
 
 export type RouteId = 'home' | 'flavours' | 'wallpapers' | 'bag'
 
@@ -182,6 +183,7 @@ function Flavours({
   const [index, setIndex] = useState(0)
   const [addedKey, setAddedKey] = useState<string | null>(null)
   const sectionRef = useRef<HTMLElement>(null)
+  const scrollerRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<ScrollTrigger | null>(null)
 
@@ -279,17 +281,49 @@ function Flavours({
     { scope: sectionRef },
   )
 
+  // Mobile (< 768px): 60fps live horizontal swipe parallax (background colour word glides + tube scales & tilts)
   useEffect(() => {
-    const section = sectionRef.current
-    if (!section) return
+    const scroller = scrollerRef.current
+    const track = trackRef.current
+    if (!scroller || !track) return
     const mq = window.matchMedia('(max-width: 767px)')
+    let rafId = 0
+
+    const updateMobileCarousel = () => {
+      rafId = 0
+      if (!mq.matches) return
+      const vw = Math.max(1, window.innerWidth)
+      const scrollX = scroller.scrollLeft
+      const next = clamp(Math.round(scrollX / vw), 0, flavours.length - 1)
+      setIndex(prev => (prev === next ? prev : next))
+
+      const panels = track.querySelectorAll<HTMLElement>('.flavour-panel')
+      panels.forEach((panel, i) => {
+        const offset = clamp((i * vw - scrollX) / vw, -1.2, 1.2)
+        const abs = Math.abs(offset)
+        const word = panel.querySelector<HTMLElement>('.flavour-panel__name')
+        const tube = panel.querySelector<HTMLElement>('.flavour-tube-wrap')
+        if (word) {
+          word.style.transform = `translate3d(${(offset * 46).toFixed(1)}px, 0, 0) scale(${(1 - abs * 0.08).toFixed(4)})`
+          word.style.opacity = `${clamp(0.92 - abs * 0.45, 0.25, 0.92).toFixed(3)}`
+        }
+        if (tube) {
+          tube.style.transform = `translate3d(${(-offset * 18).toFixed(1)}px, ${(abs * 14).toFixed(1)}px, 0) rotate(${(offset * 6.5).toFixed(2)}deg) scale(${(1 - abs * 0.14).toFixed(4)})`
+        }
+      })
+    }
+
     const onScroll = () => {
       if (!mq.matches) return
-      const next = clamp(Math.round(section.scrollLeft / Math.max(1, window.innerWidth)), 0, flavours.length - 1)
-      setIndex(prev => (prev === next ? prev : next))
+      if (!rafId) rafId = requestAnimationFrame(updateMobileCarousel)
     }
-    section.addEventListener('scroll', onScroll, { passive: true })
-    return () => section.removeEventListener('scroll', onScroll)
+
+    updateMobileCarousel()
+    scroller.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      scroller.removeEventListener('scroll', onScroll)
+      if (rafId) cancelAnimationFrame(rafId)
+    }
   }, [])
 
   const selectFlavour = (dotIndex: number, item: Flavour) => {
@@ -299,8 +333,8 @@ function Flavours({
     if (st) {
       const targetY = st.start + (dotIndex / Math.max(1, flavours.length - 1)) * (st.end - st.start)
       onScrollToY(targetY)
-    } else if (sectionRef.current && window.matchMedia('(max-width: 767px)').matches) {
-      sectionRef.current.scrollTo({ left: dotIndex * window.innerWidth, behavior: 'smooth' })
+    } else if (scrollerRef.current && window.matchMedia('(max-width: 767px)').matches) {
+      scrollerRef.current.scrollTo({ left: dotIndex * window.innerWidth, behavior: 'smooth' })
     }
   }
 
@@ -312,7 +346,8 @@ function Flavours({
       data-aura="#F2EDE4,#F2EDE4"
       style={{ '--active-aura': flavour.aura } as React.CSSProperties}
     >
-      <div className="flavours__track" ref={trackRef}>
+      <div className="flavours__scroller" ref={scrollerRef}>
+        <div className="flavours__track" ref={trackRef}>
         {flavours.map(item => (
           <article
             className="flavour-panel"
@@ -349,6 +384,7 @@ function Flavours({
             </div>
           </article>
         ))}
+        </div>
       </div>
 
       <div className="flavour-dots" role="tablist" aria-label="FLAVOURS">
@@ -380,7 +416,8 @@ function Texture() {
   const current = useRef({ x: 0, y: 0 })
   const [active, setActive] = useState(false)
 
-  // Dramatic scroll-driven window expansion: starts as a compact framed studio square and expands to 100vw full-bleed
+  // Dramatic scroll-driven window expansion:
+  // Desktop: crisp clip-path aperture reveal; Mobile: pure GPU scale + radius expand (zero clip-path stutter)
   useGSAP(
     () => {
       const section = sectionRef.current
@@ -391,24 +428,34 @@ function Texture() {
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       if (reduced) return
 
+      const isMobile = window.matchMedia('(max-width: 767px)').matches
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: section,
           start: 'top 92%',
-          end: 'center 42%',
-          scrub: 0.65,
+          end: isMobile ? 'center 52%' : 'center 42%',
+          scrub: isMobile ? 0.4 : 0.65,
         },
       })
 
-      tl.fromTo(
-        photo,
-        { clipPath: 'inset(28% 32% 28% 32%)', y: 48 },
-        { clipPath: 'inset(0% 0% 0% 0%)', y: 0, ease: 'power1.out' },
-        0,
-      ).fromTo(img, { scale: 1.38 }, { scale: 1.0, ease: 'power1.out' }, 0)
+      if (isMobile) {
+        tl.fromTo(
+          photo,
+          { scale: 0.82, borderRadius: '26px', y: 28 },
+          { scale: 1, borderRadius: '0px', y: 0, ease: 'power1.out' },
+          0,
+        ).fromTo(img, { scale: 1.18 }, { scale: 1.0, ease: 'power1.out' }, 0)
+      } else {
+        tl.fromTo(
+          photo,
+          { clipPath: 'inset(28% 32% 28% 32%)', y: 48 },
+          { clipPath: 'inset(0% 0% 0% 0%)', y: 0, ease: 'power1.out' },
+          0,
+        ).fromTo(img, { scale: 1.38 }, { scale: 1.0, ease: 'power1.out' }, 0)
+      }
 
       if (line) {
-        tl.fromTo(line, { y: 34, opacity: 0 }, { y: 0, opacity: 1, ease: 'none' }, 0.58)
+        tl.fromTo(line, { y: 34, opacity: 0 }, { y: 0, opacity: 1, ease: 'none' }, 0.52)
       }
 
       return () => {
@@ -419,8 +466,9 @@ function Texture() {
     { scope: sectionRef },
   )
 
-  // Restored compact ROUND 4K optical magnifying glass (136px, pixel-exact 2.25x cover-math zoom)
+  // Compact ROUND 4K optical magnifying glass — ONLY ticks RAF while actively inspecting (zero idle CPU drain)
   useEffect(() => {
+    if (!active) return
     let frame = 0
     const ZOOM = 2.25
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -463,7 +511,7 @@ function Texture() {
 
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [])
+  }, [active])
 
   const updatePointer = (event: React.PointerEvent<HTMLElement>, snap = false) => {
     const box = photoRef.current
@@ -514,10 +562,39 @@ function Texture() {
 
 function Stand() {
   const [turn, setTurn] = useState(0)
+  const sectionRef = useRef<HTMLElement>(null)
+  const copyRef = useRef<HTMLDivElement>(null)
   const spring = useRef(createSpring('heavy'))
   const history = useRef(new PointerHistory())
   const drag = useRef({ active: false, lastX: 0 })
   const frame = useRef(0)
+
+  useGSAP(
+    () => {
+      const section = sectionRef.current
+      const copy = copyRef.current
+      if (!section || !copy) return
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+      const img = section.querySelector<HTMLElement>('.stand__bleed')
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: section,
+          start: 'top 86%',
+          end: 'center 52%',
+          scrub: 0.45,
+        },
+      })
+      if (img) {
+        tl.fromTo(img, { y: 42, scale: 0.9, opacity: 0.5 }, { y: 0, scale: 1, opacity: 1, ease: 'power2.out' }, 0)
+      }
+      tl.fromTo(copy, { y: 28, opacity: 0 }, { y: 0, opacity: 1, ease: 'power2.out' }, 0.25)
+      return () => {
+        tl.scrollTrigger?.kill()
+        tl.kill()
+      }
+    },
+    { scope: sectionRef },
+  )
 
   useEffect(() => {
     let previous = performance.now()
@@ -535,8 +612,10 @@ function Stand() {
       }
     }
     const scene = document.querySelector<HTMLElement>('#stand .stand__bleed')
+    scene?.addEventListener('pointerdown', wake)
     scene?.addEventListener('pointermove', wake)
     return () => {
+      scene?.removeEventListener('pointerdown', wake)
       scene?.removeEventListener('pointermove', wake)
       if (frame.current) cancelAnimationFrame(frame.current)
     }
@@ -571,7 +650,7 @@ function Stand() {
   }
 
   return (
-    <section id="stand" className="stand section" data-aura="#8FC3E6,#F2EDE4">
+    <section ref={sectionRef} id="stand" className="stand section" data-aura="#8FC3E6,#F2EDE4">
       <div
         className="stand__bleed"
         onPointerDown={startDrag}
@@ -589,7 +668,7 @@ function Stand() {
           style={{ transform: `perspective(1400px) rotateY(${turn.toFixed(2)}deg)` }}
         />
       </div>
-      <div className="stand__copy">
+      <div ref={copyRef} className="stand__copy">
         <p className="display">the stand.</p>
         <p>a soft home for all six.</p>
       </div>
@@ -651,8 +730,29 @@ function Footer() {
     el.addEventListener('pointermove', onMove, { passive: true })
     el.addEventListener('pointerenter', onMove)
     el.addEventListener('pointerleave', onLeave)
+
+    // On mobile touch devices, gently illuminate the prismatic MOCHI colour sweep on scroll into view
+    const isTouch = window.matchMedia('(max-width: 767px), (hover: none) and (pointer: coarse)').matches
+    let io: IntersectionObserver | null = null
+    if (isTouch) {
+      io = new IntersectionObserver(
+        ([entry]) => {
+          if (entry?.isIntersecting) {
+            targetRef.current = { x: 52, y: 50, active: true }
+            wake()
+          } else {
+            targetRef.current.active = false
+            wake()
+          }
+        },
+        { threshold: 0.35 },
+      )
+      io.observe(el)
+    }
+
     return () => {
       disposed = true
+      io?.disconnect()
       if (raf) cancelAnimationFrame(raf)
       el.removeEventListener('pointermove', onMove)
       el.removeEventListener('pointerenter', onMove)
@@ -865,9 +965,26 @@ function App() {
     }
   }, [route])
 
-  // Smooth Lenis scroll across Home AND dedicated Flavours / Wallpapers / Bag pages
+  // Smooth Lenis scroll on Desktop; Mobile uses native 120Hz OS touch momentum + width-guarded ScrollTrigger refresh
   useEffect(() => {
     if (reduced) return
+    const isTouchMobile = window.matchMedia('(max-width: 767px), (hover: none) and (pointer: coarse)').matches
+    let lastW = window.innerWidth
+
+    if (isTouchMobile) {
+      const onWidthResize = () => {
+        if (Math.abs(window.innerWidth - lastW) < 2) return
+        lastW = window.innerWidth
+        ScrollTrigger.refresh()
+      }
+      window.addEventListener('resize', onWidthResize, { passive: true })
+      const refreshTimer = window.setTimeout(() => ScrollTrigger.refresh(), 220)
+      return () => {
+        window.clearTimeout(refreshTimer)
+        window.removeEventListener('resize', onWidthResize)
+      }
+    }
+
     const lenis = new Lenis({
       duration: 1.12,
       smoothWheel: true,
