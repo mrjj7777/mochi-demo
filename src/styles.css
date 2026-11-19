@@ -1217,15 +1217,67 @@ html { scrollbar-color: var(--jelly) var(--cream); scrollbar-width: thin; }
   margin: 0 auto !important;
 }
 
+.texture {
+  cursor: none;
+}
+
+.texture__photo img {
+  filter: saturate(1.02) contrast(1.01) !important;
+}
+
 .texture__line {
   text-shadow: 0 2px 24px rgba(20, 20, 20, 0.42);
   mask-image: none !important;
 }
 
+/* Realistic compact 2.25x optical magnifying glass */
 .texture__lens {
+  position: absolute;
+  left: 0 !important;
+  top: 0 !important;
+  width: 136px !important;
+  height: 136px !important;
+  aspect-ratio: 1;
   border-radius: 50% !important;
-  border: 1px solid rgba(250, 247, 242, 0.72);
-  box-shadow: 0 16px 42px rgba(20, 20, 20, 0.24) !important;
+  border: 1.5px solid rgba(255, 253, 250, 0.92) !important;
+  background-image: url('/media/photos/mochi-peach-model.webp');
+  background-repeat: no-repeat;
+  box-shadow:
+    0 16px 34px rgba(14, 12, 10, 0.32),
+    0 2px 6px rgba(14, 12, 10, 0.18),
+    inset 0 0 14px rgba(255, 255, 255, 0.22),
+    inset -6px -8px 16px rgba(20, 16, 14, 0.15),
+    inset 5px 5px 12px rgba(255, 255, 255, 0.3) !important;
+  filter: contrast(1.04) saturate(1.05);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  will-change: transform, background-position;
+  transition: opacity 220ms ease, visibility 220ms ease !important;
+  overflow: hidden;
+}
+
+/* Curved optical glass specular reflection arc */
+.texture__lens::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50% !important;
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.44) 0%, rgba(255, 255, 255, 0.1) 24%, transparent 52%),
+    radial-gradient(circle at 50% 50%, transparent 64%, rgba(18, 14, 12, 0.16) 100%);
+  pointer-events: none;
+}
+
+.texture__lens--active {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (pointer: coarse) {
+  .texture {
+    cursor: auto;
+  }
 }
 
 .lightbox {

@@ -270,32 +270,67 @@ function Flavours({ bag, setBag }: { bag: number; setBag: (value: number) => voi
 
 function Texture() {
   const photoRef = useRef<HTMLDivElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
   const lensRef = useRef<HTMLDivElement>(null)
-  const target = useRef({ x: 50, y: 50 })
-  const current = useRef({ x: 50, y: 50 })
+  const target = useRef({ x: 0, y: 0, ready: false })
+  const current = useRef({ x: 0, y: 0 })
   const [active, setActive] = useState(false)
 
   useEffect(() => {
     let frame = 0
+    const ZOOM = 2.25
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
     const tick = () => {
-      current.current.x += (target.current.x - current.current.x) * (reduced ? 1 : 0.12)
-      current.current.y += (target.current.y - current.current.y) * (reduced ? 1 : 0.12)
-      if (lensRef.current) {
-        lensRef.current.style.setProperty('--lens-x', `${current.current.x}%`)
-        lensRef.current.style.setProperty('--lens-y', `${current.current.y}%`)
+      const box = photoRef.current
+      const img = imgRef.current
+      const lens = lensRef.current
+      if (box && img && lens && target.current.ready) {
+        const alpha = reduced ? 1 : 0.22
+        current.current.x += (target.current.x - current.current.x) * alpha
+        current.current.y += (target.current.y - current.current.y) * alpha
+
+        const boxW = box.clientWidth
+        const boxH = box.clientHeight
+        const natW = img.naturalWidth || 1200
+        const natH = img.naturalHeight || 1500
+        const lensSize = lens.offsetWidth || 150
+
+        // Pixel-exact object-fit: cover geometry so the lens magnifies the EXACT pixel under the cursor
+        const coverScale = Math.max(boxW / natW, boxH / natH)
+        const coverW = natW * coverScale
+        const coverH = natH * coverScale
+        const offsetX = (boxW - coverW) * 0.5
+        const offsetY = (boxH - coverH) * 0.5
+
+        const imgX = current.current.x - offsetX
+        const imgY = current.current.y - offsetY
+
+        const bgW = coverW * ZOOM
+        const bgH = coverH * ZOOM
+        const bgPosX = lensSize * 0.5 - imgX * ZOOM
+        const bgPosY = lensSize * 0.5 - imgY * ZOOM
+
+        lens.style.transform = `translate3d(${(current.current.x - lensSize * 0.5).toFixed(2)}px, ${(current.current.y - lensSize * 0.5).toFixed(2)}px, 0)`
+        lens.style.backgroundSize = `${bgW.toFixed(2)}px ${bgH.toFixed(2)}px`
+        lens.style.backgroundPosition = `${bgPosX.toFixed(2)}px ${bgPosY.toFixed(2)}px`
       }
       frame = requestAnimationFrame(tick)
     }
+
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
   }, [])
 
-  const moveLens = (event: React.PointerEvent<HTMLElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect()
-    target.current = {
-      x: ((event.clientX - rect.left) / rect.width) * 100,
-      y: ((event.clientY - rect.top) / rect.height) * 100,
+  const updatePointer = (event: React.PointerEvent<HTMLElement>, snap = false) => {
+    const box = photoRef.current
+    if (!box) return
+    const rect = box.getBoundingClientRect()
+    const x = clamp(event.clientX - rect.left, 0, rect.width)
+    const y = clamp(event.clientY - rect.top, 0, rect.height)
+    target.current = { x, y, ready: true }
+    if (snap) {
+      current.current = { x, y }
     }
   }
 
@@ -304,12 +339,16 @@ function Texture() {
       id="texture"
       className="texture section"
       data-aura="#8FC3E6,#F4A27E"
-      onPointerMove={moveLens}
-      onPointerEnter={() => setActive(true)}
+      onPointerMove={e => updatePointer(e, false)}
+      onPointerEnter={e => {
+        updatePointer(e, true)
+        setActive(true)
+      }}
       onPointerLeave={() => setActive(false)}
     >
       <div ref={photoRef} className="texture__photo">
         <img
+          ref={imgRef}
           src="/media/photos/mochi-peach-model.webp"
           alt="MOCHI peach lip jelly in use"
           loading="eager"
