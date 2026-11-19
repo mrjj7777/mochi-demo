@@ -5,8 +5,7 @@ import { useGSAP } from '@gsap/react'
 import Lenis from 'lenis'
 import { flavours, type Flavour } from './brand'
 import PhysicsBelief from './components/Belief'
-import BlobjectShowcase from './components/BlobjectShowcase'
-import CampaignLoopGallery, { type GalleryItem } from './components/CampaignLoopGallery'
+import BlobjectShowcase, { type GalleryItem } from './components/BlobjectShowcase'
 import GlobalAuraCanvas from './components/GlobalAura'
 import PhysicsHero from './components/Hero'
 import { PointerHistory, clamp, createSpring, projectMomentum, rubberBand } from './physics'
@@ -85,7 +84,6 @@ function Header({ bag, onJump }: { bag: number; onJump: (id: string) => void }) 
         >
           FLAVOURS
         </button>
-        <button onClick={() => onJump('blobject')}>FORM</button>
         <button onClick={() => onJump('wallpapers')}>ARCHIVE</button>
         <span className="bag" aria-label={`bag ${bag}`}>
           BAG ({bag})
@@ -625,38 +623,10 @@ function GalleryModal({
   )
 }
 
-function Lightbox({ data, onClose }: { data: { src: string; title: string } | null; onClose: () => void }) {
-  useEffect(() => {
-    if (!data) return
-    const close = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', close)
-    return () => window.removeEventListener('keydown', close)
-  }, [data, onClose])
-  if (!data) return null
-  return (
-    <div className="lightbox" role="dialog" aria-modal="true" onClick={onClose}>
-      <button type="button" onClick={onClose} aria-label="Close">
-        CLOSE
-      </button>
-      <img
-        src={data.src}
-        alt={data.title}
-        decoding="async"
-        onError={event => {
-          event.currentTarget.style.display = 'none'
-        }}
-      />
-    </div>
-  )
-}
-
 function App() {
   const [loaded, setLoaded] = useState(false)
   const [bag, setBag] = useState(0)
   const [reduced, setReduced] = useState(false)
-  const [lightbox, setLightbox] = useState<{ src: string; title: string } | null>(null)
   const [galleryModal, setGalleryModal] = useState<{ items: GalleryItem[]; index: number } | null>(null)
   const [flavour, setFlavour] = useState(flavours[0])
   const lenisRef = useRef<Lenis | null>(null)
@@ -724,16 +694,14 @@ function App() {
           <PhysicsBelief />
           <Flavours bag={bag} setBag={setBag} />
           <Texture />
-          <BlobjectShowcase reduced={reduced} onOpen={(src, title) => setLightbox({ src, title })} />
           <Stand />
-          <CampaignLoopGallery
+          <BlobjectShowcase
             reduced={reduced}
             onOpenItem={(items, index) => setGalleryModal({ items, index })}
           />
         </main>
         <Footer />
       </div>
-      <Lightbox data={lightbox} onClose={() => setLightbox(null)} />
       <GalleryModal
         state={galleryModal}
         onClose={() => setGalleryModal(null)}
