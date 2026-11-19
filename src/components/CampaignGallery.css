@@ -1,0 +1,359 @@
+/* ==========================================================================
+   MOCHI — Campaign Gallery ("worn by everyone.")
+   Desktop: REEL FLUX concave panoramic cinema-lens illusion (all 29 posters, original colours).
+   Mobile: Native horizontal 4:5 scroll-snap strip.
+   ========================================================================== */
+
+.campaign-gallery {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 66px 0 26px;
+  background: transparent;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.campaign-gallery__head {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 clamp(20px, 4.5vw, 64px);
+  flex: 0 0 auto;
+}
+
+.campaign-gallery__title {
+  margin: 0;
+  font-family: var(--display, 'Krona One', sans-serif);
+  font-size: clamp(1.9rem, 3.4vw, 3.2rem);
+  font-weight: 400;
+  line-height: 0.96;
+  letter-spacing: -0.035em;
+  color: var(--ink, #141414);
+}
+
+.campaign-gallery__title em {
+  font-family: var(--emotion, 'Instrument Serif', serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.18em;
+  letter-spacing: -0.01em;
+}
+
+.campaign-gallery__spec {
+  font-family: var(--micro, 'Geist Mono Variable', monospace);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink, #141414);
+  opacity: 0.62;
+  white-space: nowrap;
+}
+
+/* Edge-to-edge full-bleed WebGL REEL FLUX concave panoramic canvas */
+.campaign-reel__host {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100vw;
+  min-height: 0;
+  margin: 4px 0;
+}
+
+.campaign-reel__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.campaign-reel__canvas.is-dragging {
+  cursor: grabbing;
+}
+
+/* Visually hidden accessible list for desktop screen readers & keyboard users */
+.campaign-reel__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.campaign-gallery__footer {
+  position: relative;
+  z-index: 3;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 clamp(20px, 4.5vw, 64px);
+}
+
+.campaign-gallery__active-caption,
+.campaign-gallery__counter,
+.campaign-gallery__inspect {
+  font-family: var(--micro, 'Geist Mono Variable', monospace);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink, #141414);
+  white-space: nowrap;
+}
+
+.campaign-gallery__active-caption {
+  min-width: 190px;
+}
+
+.campaign-gallery__counter {
+  opacity: 0.72;
+}
+
+.campaign-gallery__rail {
+  flex: 1 1 auto;
+  height: 1px;
+  background: rgba(20, 20, 20, 0.16);
+  overflow: hidden;
+}
+
+.campaign-gallery__rail-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--ink, #141414);
+  transform-origin: left center;
+}
+
+.campaign-gallery__inspect {
+  padding: 4px 0;
+  background: transparent;
+  border-bottom: 1px solid rgba(20, 20, 20, 0.34);
+}
+
+.campaign-gallery__inspect:hover,
+.campaign-gallery__inspect:focus-visible {
+  border-bottom-color: var(--ink, #141414);
+}
+
+/* Shared strip styles (used on mobile) */
+.campaign-strip__item {
+  flex: 0 0 auto;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.campaign-strip__btn {
+  display: block;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.campaign-strip__img {
+  display: block;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+.campaign-strip__caption {
+  margin: 0;
+  font-family: var(--micro, 'Geist Mono Variable', monospace);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink, #141414);
+  opacity: 0.84;
+  white-space: nowrap;
+}
+
+/* Full-screen Lightbox on cream (rendered via Portal in document.body above nav) */
+.campaign-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 72px clamp(20px, 6vw, 88px) 48px;
+  background: var(--cream, #F2EDE4);
+  color: var(--ink, #141414);
+}
+
+.campaign-lightbox__bar {
+  position: absolute;
+  top: 24px;
+  left: clamp(20px, 4.5vw, 64px);
+  right: clamp(20px, 4.5vw, 64px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 2;
+}
+
+.campaign-lightbox__counter,
+.campaign-lightbox__close {
+  font-family: var(--micro, 'Geist Mono Variable', monospace);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink, #141414);
+  background: transparent;
+  padding: 6px 0;
+}
+
+.campaign-lightbox__close:hover,
+.campaign-lightbox__close:focus-visible {
+  border-bottom: 1px solid var(--ink, #141414);
+}
+
+.campaign-lightbox__figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.campaign-lightbox__img {
+  display: block;
+  max-width: min(82vw, 760px);
+  max-height: calc(100svh - 168px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+
+.campaign-lightbox__caption {
+  font-family: var(--micro, 'Geist Mono Variable', monospace);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink, #141414);
+}
+
+.campaign-lightbox__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--ink, #141414);
+  font-family: var(--ui, 'Geist Variable', sans-serif);
+  font-size: 22px;
+  z-index: 2;
+}
+
+.campaign-lightbox__arrow--prev {
+  left: clamp(12px, 3vw, 40px);
+}
+
+.campaign-lightbox__arrow--next {
+  right: clamp(12px, 3vw, 40px);
+}
+
+/* Mobile (< 768px): no pin, native horizontal scroll-snap strip, 84vw cards at 4:5 */
+@media (max-width: 767px) {
+  .campaign-gallery {
+    height: auto;
+    min-height: 0;
+    padding: 84px 0 64px;
+    gap: 24px;
+  }
+
+  .campaign-gallery__head {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .campaign-gallery__title {
+    font-size: clamp(1.85rem, 8.2vw, 2.5rem);
+  }
+
+  .campaign-gallery__viewport {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .campaign-gallery__viewport::-webkit-scrollbar {
+    display: none;
+  }
+
+  .campaign-gallery__track {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4vw;
+    padding: 0 8vw;
+  }
+
+  .campaign-strip__item {
+    width: 84vw;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+  }
+
+  .campaign-strip__img {
+    width: 84vw;
+    height: auto;
+  }
+
+  .campaign-gallery__active-caption,
+  .campaign-gallery__inspect {
+    display: none;
+  }
+
+  .campaign-lightbox {
+    padding: 68px 16px 36px;
+  }
+
+  .campaign-lightbox__img {
+    max-width: 92vw;
+    max-height: calc(100svh - 170px);
+  }
+}

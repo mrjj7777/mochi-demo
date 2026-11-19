@@ -1,5 +1,6 @@
 .mochi-hero {
   position: relative;
+  height: 100svh;
   min-height: 100svh;
   background: var(--cream, #F2EDE4);
   color: var(--ink, #141414);
@@ -16,6 +17,16 @@
   isolation: isolate;
 }
 
+/* Full-colour crisp video — recedes gently in depth as Belief shutter sweeps up from the bottom */
+.mochi-hero__media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  transform: scale(calc(1 - var(--hero-exit-fade, 0) * 0.045));
+  transform-origin: center center;
+  will-change: transform;
+}
+
 .mochi-hero__poster,
 .mochi-hero__canvas {
   position: absolute;
@@ -26,61 +37,36 @@
   object-fit: cover;
   object-position: center;
   background: var(--cream, #F2EDE4);
-}
-
-/* On narrower/square viewports, keep all 6 tubes uncropped */
-@media (max-aspect-ratio: 14 / 9) {
-  .mochi-hero__poster {
-    object-fit: contain;
-  }
+  filter: none;
 }
 
 .mochi-hero__poster {
   z-index: 0;
-  filter: contrast(1.04) saturate(1.08);
 }
 
 .mochi-hero__canvas {
   z-index: 1;
-  filter: contrast(1.04) saturate(1.08);
   opacity: 0;
-  transition: opacity 260ms ease;
 }
 
 .mochi-hero__pin.is-ready .mochi-hero__canvas {
   opacity: 1;
 }
 
-.mochi-hero__grade {
+/* Subtle dim as the Belief shutter glides up over the hero video */
+.mochi-hero__seam-fade {
   position: absolute;
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  background:
-    radial-gradient(circle at 50% 48%, rgba(255, 244, 236, 0.04), transparent 58%),
-    linear-gradient(
-      180deg,
-      rgba(26, 16, 22, 0.07) 0%,
-      transparent 18%,
-      transparent 82%,
-      rgba(242, 237, 228, 0.34) 100%
-    );
-}
-
-.mochi-hero__pin.is-fitted .mochi-hero__grade {
-  background: linear-gradient(
-    180deg,
-    rgba(242, 237, 228, 0.25) 0%,
-    transparent 16%,
-    transparent 84%,
-    rgba(242, 237, 228, 0.28) 100%
-  );
+  background: rgba(20, 18, 16, 0.16);
+  opacity: var(--hero-exit-fade, 0);
 }
 
 .mochi-hero__headline {
   position: absolute;
   z-index: 3;
-  top: 11.5svh;
+  top: clamp(78px, 11svh, 116px);
   left: 50%;
   width: min(92vw, 1080px);
   color: var(--ink, #141414);
@@ -88,7 +74,7 @@
   pointer-events: none;
   opacity: var(--hero-headline-progress, 0);
   clip-path: inset(calc((1 - var(--hero-headline-progress, 0)) * 100%) 0 0 0);
-  transform: translate3d(-50%, calc((1 - var(--hero-headline-progress, 0)) * 1.4rem), 0);
+  transform: translate3d(-50%, calc((1 - var(--hero-headline-progress, 0)) * 1.2rem), 0);
   transform-origin: center top;
   will-change: transform, opacity, clip-path;
 }
@@ -96,18 +82,35 @@
 .mochi-hero__headline span,
 .mochi-hero__headline em {
   font-family: var(--display, 'Krona One', sans-serif);
-  font-size: clamp(2.4rem, 6vw, 6.4rem);
+  font-size: clamp(2.2rem, 5.4vw, 5.8rem);
   font-weight: 400;
-  letter-spacing: -0.055em;
-  line-height: 0.92;
+  letter-spacing: -0.04em;
+  line-height: 0.96;
 }
 
 .mochi-hero__headline em {
   margin-left: 0.14em;
   font-family: var(--emotion, 'Instrument Serif', Georgia, serif);
-  font-size: clamp(2.8rem, 7.2vw, 7.6rem);
+  font-size: clamp(2.6rem, 6.4vw, 6.9rem);
   font-style: italic;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
+}
+
+.mochi-hero__mono {
+  position: absolute;
+  z-index: 3;
+  left: clamp(20px, 4.5vw, 64px);
+  bottom: max(1.6rem, env(safe-area-inset-bottom));
+  margin: 0;
+  font-family: var(--micro, 'Geist Mono Variable', monospace);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink, #141414);
+  opacity: var(--hero-cue-opacity, 1);
+  pointer-events: none;
 }
 
 .mochi-hero__scroll-cue {
@@ -121,13 +124,13 @@
   gap: 8px;
   padding: 10px 0 0;
   border: 0;
-  border-top: 1px solid rgba(20, 20, 20, 0.36);
+  border-top: 1px solid rgba(20, 20, 20, 0.42);
   background: transparent;
   color: var(--ink, #141414);
   font-family: var(--micro, 'Geist Mono Variable', monospace);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   line-height: 1;
   text-transform: uppercase;
   transform: translateX(-50%);
@@ -136,31 +139,42 @@
 }
 
 .mochi-hero__scroll-cue:focus-visible {
-  outline: 1px solid currentColor;
+  outline: 2px solid var(--jelly, #B3122E);
   outline-offset: 6px;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 767px) {
   .mochi-hero__pin {
     min-height: 100svh;
   }
 
   .mochi-hero__headline {
-    top: 11svh;
-    width: calc(100% - 2rem);
+    top: calc(env(safe-area-inset-top, 0px) + 74px);
+    width: calc(100% - 40px);
   }
 
   .mochi-hero__headline span {
-    font-size: clamp(1.9rem, 9.5vw, 3.4rem);
+    font-size: clamp(1.75rem, 8.2vw, 2.8rem);
   }
 
   .mochi-hero__headline em {
-    font-size: clamp(2.25rem, 11vw, 3.9rem);
+    font-size: clamp(2.1rem, 9.6vw, 3.3rem);
+  }
+
+  .mochi-hero__mono {
+    left: 20px;
+    right: 20px;
+    bottom: max(1.5rem, env(safe-area-inset-bottom));
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .mochi-hero__scroll-cue {
-    bottom: max(1.8rem, env(safe-area-inset-bottom));
-    font-size: 10px;
+    left: 50%;
+    bottom: max(4rem, calc(env(safe-area-inset-bottom) + 2.6rem));
+    font-size: 12px;
   }
 }
 

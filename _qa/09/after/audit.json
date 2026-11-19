@@ -1,0 +1,159 @@
+{
+  "phase": "after",
+  "baseUrl": "http://127.0.0.1:5174/",
+  "capturedAt": "2026-11-19T12:30:22.741Z",
+  "viewports": {
+    "desk-1440": {
+      "metrics": {
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "overflowX": 0,
+        "loadedFonts": [
+          "Krona One (400 normal)",
+          "Geist Variable (100 900 normal)",
+          "Geist Mono Variable (100 900 normal)",
+          "Instrument Serif (400 italic)",
+          "Krona One (normal normal)"
+        ],
+        "navLinks": [
+          "MOCHI",
+          "FLAVOURS",
+          "WALLPAPERS",
+          "BAG (0)"
+        ],
+        "preloaderVisible": false,
+        "sectionIds": [
+          "hero",
+          "flavours",
+          "texture",
+          "lookbook",
+          "stand",
+          "wallpapers",
+          "footer"
+        ],
+        "minFontSize": 12,
+        "smallestText": "12px: \"MOCHI\" (.nav-brand.is-route-active)"
+      },
+      "galleryStats": {
+        "count": 29,
+        "nonZeroRadius": 0,
+        "filtered": 0,
+        "firstCaption": "(01) PINK NOISE",
+        "lastCaption": "(29) ONE POUT, SIX TIMES",
+        "captionsCount": 29,
+        "wallpapersCount": 6,
+        "wpLabels": [
+          "1290 × 2796 — CHERRY",
+          "1290 × 2796 — PEACH",
+          "1290 × 2796 — LYCHEE",
+          "1290 × 2796 — GRAPE",
+          "1290 × 2796 — MINT",
+          "1290 × 2796 — MANGO"
+        ],
+        "wpDownloads": [
+          "↓ DOWNLOAD 1290 × 2796",
+          "↓ DOWNLOAD 1290 × 2796",
+          "↓ DOWNLOAD 1290 × 2796",
+          "↓ DOWNLOAD 1290 × 2796",
+          "↓ DOWNLOAD 1290 × 2796",
+          "↓ DOWNLOAD 1290 × 2796"
+        ],
+        "roundedEls": 1,
+        "shadowedEls": 1
+      },
+      "interactions": {
+        "navLightOverTexture": true,
+        "lightboxCaption": "(02) MOCHI",
+        "lightboxClosed": true,
+        "capPopTransform": "",
+        "flavoursPageTitle": "six moods.",
+        "wallpapersPageTitle": "take the colour home.",
+        "bagPageTitle": "your bag."
+      },
+      "captured": [
+        "02-belief-desk-1440.png",
+        "03-flavours-desk-1440.png",
+        "04-texture-desk-1440.png",
+        "05-lookbook-desk-1440.png",
+        "06-stand-desk-1440.png",
+        "07-wallpapers-desk-1440.png",
+        "08-footer-desk-1440.png"
+      ],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    },
+    "mob-375": {
+      "metrics": {
+        "innerWidth": 375,
+        "scrollWidth": 375,
+        "overflowX": 0,
+        "loadedFonts": [
+          "Krona One (400 normal)",
+          "Geist Variable (100 900 normal)",
+          "Geist Mono Variable (100 900 normal)",
+          "Instrument Serif (400 italic)",
+          "Krona One (normal normal)"
+        ],
+        "navLinks": [
+          "MOCHI",
+          "FLAVOURS",
+          "WALLPAPERS",
+          "BAG (0)"
+        ],
+        "preloaderVisible": false,
+        "sectionIds": [
+          "hero",
+          "flavours",
+          "texture",
+          "lookbook",
+          "stand",
+          "wallpapers",
+          "footer"
+        ],
+        "minFontSize": 12,
+        "smallestText": "12px: \"MOCHI\" (.nav-brand.is-route-active)"
+      },
+      "galleryStats": {
+        "count": 29,
+        "nonZeroRadius": 0,
+        "filtered": 0,
+        "firstCaption": "(01) PINK NOISE",
+        "lastCaption": "(29) ONE POUT, SIX TIMES",
+        "captionsCount": 29,
+        "wallpapersCount": 6,
+        "wpLabels": [
+          "1290 × 2796 — CHERRY",
+          "1290 × 2796 — PEACH",
+          "1290 × 2796 — LYCHEE",
+          "1290 × 2796 — GRAPE",
+          "1290 × 2796 — MINT",
+          "1290 × 2796 — MANGO"
+        ],
+        "wpDownloads": [
+          "↓ DOWNLOAD 1290 × 2796",
+          "↓ DOWNLOAD 1290 × 2796",
+          "↓ DOWNLOAD 1290 × 2796",
+          "↓ DOWNLOAD 1290 × 2796",
+          "↓ DOWNLOAD 1290 × 2796",
+          "↓ DOWNLOAD 1290 × 2796"
+        ],
+        "roundedEls": 1,
+        "shadowedEls": 1
+      },
+      "interactions": null,
+      "captured": [
+        "02-belief-mob-375.png",
+        "03-flavours-mob-375.png",
+        "04-texture-mob-375.png",
+        "05-lookbook-mob-375.png",
+        "06-stand-mob-375.png",
+        "07-wallpapers-mob-375.png",
+        "08-footer-mob-375.png"
+      ],
+      "consoleErrors": [],
+      "pageErrors": [],
+      "failedRequests": []
+    }
+  }
+}

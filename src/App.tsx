@@ -1,16 +1,39 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import Lenis from 'lenis'
 import { flavours, type Flavour } from './brand'
 import PhysicsBelief from './components/Belief'
-import BlobjectShowcase, { type GalleryItem } from './components/BlobjectShowcase'
+import CampaignGallery from './components/CampaignGallery'
 import GlobalAuraCanvas from './components/GlobalAura'
 import PhysicsHero from './components/Hero'
+import InteractiveTube from './components/InteractiveTube'
+import SoftTicker from './components/SoftTicker'
+import WallpapersSection from './components/WallpapersSection'
+import BagPage from './pages/BagPage'
+import FlavoursPage from './pages/FlavoursPage'
+import WallpapersPage from './pages/WallpapersPage'
 import { PointerHistory, clamp, createSpring, projectMomentum, rubberBand } from './physics'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
+
+export type RouteId = 'home' | 'flavours' | 'wallpapers' | 'bag'
+
+const ROUTE_TITLES: Record<RouteId, string> = {
+  home: 'mochi.',
+  flavours: 'six moods.',
+  wallpapers: 'take the colour home.',
+  bag: 'your bag.',
+}
+
+function readHashRoute(): RouteId {
+  if (typeof window === 'undefined') return 'home'
+  const h = window.location.hash.replace(/^#\/?/, '').toLowerCase()
+  if (h === 'flavours' || h === 'wallpapers' || h === 'bag') return h
+  return 'home'
+}
 
 const FlavourContext = createContext({ flavour: flavours[0], setFlavour: (_: Flavour) => {} })
 const useFlavour = () => useContext(FlavourContext)
@@ -18,15 +41,15 @@ const useFlavour = () => useContext(FlavourContext)
 function Preloader({ done, onDone }: { done: boolean; onDone: () => void }) {
   const [count, setCount] = useState(0)
   const [assetsReady, setAssetsReady] = useState(false)
+  const [unmounted, setUnmounted] = useState(false)
 
   useEffect(() => {
+    const isMob = window.matchMedia('(max-width: 767px)').matches
     const sources = [
-      '/media/hero-seq-v4/poster.webp',
+      isMob ? '/media/hero-seq-1920/poster-mob.webp' : '/media/hero-seq-1920/poster.webp',
       '/media/cutouts/mochi-cherry.webp',
       '/media/photos/mochi-peach-model.webp',
-      '/media/campaigns/blobject-form.webp',
-      '/media/campaigns/pink-noise.webp',
-      '/media/photos/mochi-model-1.webp',
+      '/media/campaign/mochi-campaign-01-720.webp',
     ]
     let complete = 0
     const finish = () => {
@@ -39,7 +62,7 @@ function Preloader({ done, onDone }: { done: boolean; onDone: () => void }) {
       image.onerror = finish
       image.src = source
     })
-    const cap = window.setTimeout(() => setAssetsReady(true), 850)
+    const cap = window.setTimeout(() => setAssetsReady(true), 800)
     return () => {
       complete = sources.length
       window.clearTimeout(cap)
@@ -53,49 +76,90 @@ function Preloader({ done, onDone }: { done: boolean; onDone: () => void }) {
       setCount(value)
       if (value >= 100 && assetsReady) {
         window.clearInterval(timer)
-        window.setTimeout(onDone, 180)
+        window.setTimeout(onDone, 140)
       }
     }, 16)
     return () => window.clearInterval(timer)
   }, [assetsReady, onDone])
 
+  useEffect(() => {
+    if (!done) return
+    const timer = window.setTimeout(() => setUnmounted(true), 320)
+    return () => window.clearTimeout(timer)
+  }, [done])
+
+  if (unmounted) return null
+
   return (
     <div className={`preloader ${done ? 'preloader--done' : ''}`} aria-hidden={done}>
-      <div className="preloader__dome" />
       <div className="preloader__word">MOCHI</div>
       <span className="micro preloader__count">{String(count).padStart(3, '0')}</span>
     </div>
   )
 }
 
-function Header({ bag, onJump }: { bag: number; onJump: (id: string) => void }) {
-  const { setFlavour } = useFlavour()
+function Header({
+  bag,
+  light,
+  route,
+  onNavigate,
+}: {
+  bag: number
+  light: boolean
+  route: RouteId
+  onNavigate: (next: RouteId) => void
+}) {
   return (
-    <header className="site-nav">
-      <button className="nav-brand" onClick={() => onJump('hero')} aria-label="MOCHI">
+    <header className={`site-nav ${light ? 'site-nav--light' : ''}`}>
+      <button
+        type="button"
+        className={`nav-brand ${route === 'home' ? 'is-route-active' : ''}`}
+        onClick={() => onNavigate('home')}
+        aria-label="MOCHI Home"
+      >
         MOCHI
       </button>
       <nav className="nav-links" aria-label="MOCHI">
         <button
-          onClick={() => {
-            setFlavour(flavours[0])
-            onJump('flavours')
-          }}
+          type="button"
+          className={route === 'flavours' ? 'is-route-active' : ''}
+          aria-current={route === 'flavours' ? 'page' : undefined}
+          onClick={() => onNavigate('flavours')}
         >
-          FLAVOURS
+          {route === 'flavours' ? '[ FLAVOURS ]' : 'FLAVOURS'}
         </button>
-        <button onClick={() => onJump('wallpapers')}>ARCHIVE</button>
-        <span className="bag" aria-label={`bag ${bag}`}>
-          BAG ({bag})
-        </span>
+        <button
+          type="button"
+          className={route === 'wallpapers' ? 'is-route-active' : ''}
+          aria-current={route === 'wallpapers' ? 'page' : undefined}
+          onClick={() => onNavigate('wallpapers')}
+        >
+          {route === 'wallpapers' ? '[ WALLPAPERS ]' : 'WALLPAPERS'}
+        </button>
+        <button
+          type="button"
+          className={`bag ${route === 'bag' ? 'is-route-active' : ''}`}
+          aria-current={route === 'bag' ? 'page' : undefined}
+          aria-label={`Open bag (${bag} items)`}
+          onClick={() => onNavigate('bag')}
+        >
+          {route === 'bag' ? `[ BAG (${bag}) ]` : `BAG (${bag})`}
+        </button>
       </nav>
     </header>
   )
 }
 
-function Flavours({ bag, setBag }: { bag: number; setBag: (value: number) => void }) {
+function Flavours({
+  onAddFlavour,
+  onOpenFlavoursPage,
+}: {
+  onAddFlavour: (item: Flavour) => void
+  onOpenFlavoursPage: () => void
+}) {
   const { flavour, setFlavour } = useFlavour()
   const [index, setIndex] = useState(0)
+  const [addedKey, setAddedKey] = useState<string | null>(null)
   const sectionRef = useRef<HTMLElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<ScrollTrigger | null>(null)
@@ -110,26 +174,29 @@ function Flavours({ bag, setBag }: { bag: number; setBag: (value: number) => voi
       const track = trackRef.current
       if (!section || !track) return
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      const isMobile = window.matchMedia('(max-width: 700px)').matches
+      const isMobile = window.matchMedia('(max-width: 767px)').matches
       if (reduced || isMobile) return
 
       const ctx = gsap.context(() => {
         const panels = gsap.utils.toArray<HTMLElement>('.flavour-panel', track)
         const totalMove = () => -(flavours.length - 1) * window.innerWidth
 
+        // Restored smooth 3D depth parallax + crisp snap so every flavour lands dead-center
         const horizontal = gsap.to(track, {
           x: totalMove,
           ease: 'none',
           scrollTrigger: {
             trigger: section,
             start: 'top top',
-            end: () => `+=${flavours.length * 95}%`,
-            scrub: 0.9,
+            end: () => `+=${Math.round(window.innerHeight * 3.8)}`,
+            scrub: 0.85,
             pin: true,
+            pinSpacing: true,
+            anticipatePin: 1,
             snap: {
               snapTo: 1 / (flavours.length - 1),
-              duration: { min: 0.2, max: 0.55 },
-              delay: 0.08,
+              duration: { min: 0.22, max: 0.5 },
+              delay: 0.06,
               ease: 'power2.out',
             },
             invalidateOnRefresh: true,
@@ -141,16 +208,15 @@ function Flavours({ bag, setBag }: { bag: number; setBag: (value: number) => voi
         })
         triggerRef.current = horizontal.scrollTrigger ?? null
 
-        // Subtle editorial depth parallax: giant wordmark glides BEHIND while crisp product stays IN FRONT
         panels.forEach(panel => {
           const word = panel.querySelector<HTMLElement>('.flavour-panel__name')
-          const photo = panel.querySelector<HTMLElement>('.flavour-panel__image')
+          const stage = panel.querySelector<HTMLElement>('.flavour-tube-wrap')
           if (word) {
             gsap.fromTo(
               word,
-              { xPercent: -8 },
+              { xPercent: -9 },
               {
-                xPercent: 8,
+                xPercent: 9,
                 ease: 'none',
                 scrollTrigger: {
                   trigger: panel,
@@ -162,13 +228,14 @@ function Flavours({ bag, setBag }: { bag: number; setBag: (value: number) => voi
               },
             )
           }
-          if (photo) {
+          if (stage) {
             gsap.fromTo(
-              photo,
-              { xPercent: 4, rotate: -1.8 },
+              stage,
+              { xPercent: 5, rotate: -2.2, scale: 0.94 },
               {
-                xPercent: -4,
-                rotate: 1.8,
+                xPercent: -5,
+                rotate: 2.2,
+                scale: 1.03,
                 ease: 'none',
                 scrollTrigger: {
                   trigger: panel,
@@ -191,6 +258,19 @@ function Flavours({ bag, setBag }: { bag: number; setBag: (value: number) => voi
     { scope: sectionRef },
   )
 
+  useEffect(() => {
+    const section = sectionRef.current
+    if (!section) return
+    const mq = window.matchMedia('(max-width: 767px)')
+    const onScroll = () => {
+      if (!mq.matches) return
+      const next = clamp(Math.round(section.scrollLeft / Math.max(1, window.innerWidth)), 0, flavours.length - 1)
+      setIndex(prev => (prev === next ? prev : next))
+    }
+    section.addEventListener('scroll', onScroll, { passive: true })
+    return () => section.removeEventListener('scroll', onScroll)
+  }, [])
+
   const selectFlavour = (dotIndex: number, item: Flavour) => {
     setIndex(dotIndex)
     setFlavour(item)
@@ -198,7 +278,7 @@ function Flavours({ bag, setBag }: { bag: number; setBag: (value: number) => voi
     if (st) {
       const targetY = st.start + (dotIndex / Math.max(1, flavours.length - 1)) * (st.end - st.start)
       window.scrollTo({ top: targetY, behavior: 'smooth' })
-    } else if (sectionRef.current && window.matchMedia('(max-width: 700px)').matches) {
+    } else if (sectionRef.current && window.matchMedia('(max-width: 767px)').matches) {
       sectionRef.current.scrollTo({ left: dotIndex * window.innerWidth, behavior: 'smooth' })
     }
   }
@@ -221,27 +301,30 @@ function Flavours({ bag, setBag }: { bag: number; setBag: (value: number) => voi
             <span className="flavour-panel__name" aria-hidden="true">
               {item.name}
             </span>
-            <img
-              className="flavour-panel__image"
-              src={`/media/cutouts/mochi-${item.asset}.webp`}
-              alt={`${item.name} lip jelly`}
-              loading="eager"
-              decoding="async"
-            />
+            <div className="flavour-tube-wrap">
+              <InteractiveTube item={item} />
+            </div>
             <div className="flavour-panel__footer">
               <p className="flavour-panel__mood">
                 {item.name.toLowerCase()} — <em>{item.mood}</em>
               </p>
-              <button
-                type="button"
-                className="add-pill"
-                onClick={() => {
-                  setBag(bag + 1)
-                  setFlavour(item)
-                }}
-              >
-                + ADD TO BAG
-              </button>
+              <div className="flavour-panel__ctas">
+                <button
+                  type="button"
+                  className="add-pill"
+                  onClick={() => {
+                    onAddFlavour(item)
+                    setFlavour(item)
+                    setAddedKey(item.key)
+                    window.setTimeout(() => setAddedKey(prev => (prev === item.key ? null : prev)), 900)
+                  }}
+                >
+                  {addedKey === item.key ? 'ADDED ✓' : '+ ADD TO BAG'}
+                </button>
+                <button type="button" className="add-pill add-pill--ghost" onClick={onOpenFlavoursPage}>
+                  STUDIO ↗
+                </button>
+              </div>
             </div>
           </article>
         ))}
@@ -267,13 +350,55 @@ function Flavours({ bag, setBag }: { bag: number; setBag: (value: number) => voi
 }
 
 function Texture() {
+  const sectionRef = useRef<HTMLElement>(null)
   const photoRef = useRef<HTMLDivElement>(null)
   const imgRef = useRef<HTMLImageElement>(null)
   const lensRef = useRef<HTMLDivElement>(null)
+  const lineRef = useRef<HTMLParagraphElement>(null)
   const target = useRef({ x: 0, y: 0, ready: false })
   const current = useRef({ x: 0, y: 0 })
   const [active, setActive] = useState(false)
 
+  // Creative minimalist scroll presentation: architectural shutter aperture reveal + macro optical depth pull
+  useGSAP(
+    () => {
+      const section = sectionRef.current
+      const photo = photoRef.current
+      const img = imgRef.current
+      const line = lineRef.current
+      if (!section || !photo || !img) return
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      if (reduced) return
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: section,
+          start: 'top bottom',
+          end: 'center center',
+          scrub: 0.75,
+        },
+      })
+
+      tl.fromTo(
+        photo,
+        { clipPath: 'inset(10% 8% 10% 8%)' },
+        { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none' },
+        0,
+      ).fromTo(img, { scale: 1.14 }, { scale: 1.0, ease: 'none' }, 0)
+
+      if (line) {
+        tl.fromTo(line, { y: 26, opacity: 0 }, { y: 0, opacity: 1, ease: 'none' }, 0.35)
+      }
+
+      return () => {
+        tl.scrollTrigger?.kill()
+        tl.kill()
+      }
+    },
+    { scope: sectionRef },
+  )
+
+  // Restored compact ROUND 4K optical magnifying glass (136px, pixel-exact 2.25x cover-math zoom)
   useEffect(() => {
     let frame = 0
     const ZOOM = 2.25
@@ -292,9 +417,8 @@ function Texture() {
         const boxH = box.clientHeight
         const natW = img.naturalWidth || 1200
         const natH = img.naturalHeight || 1500
-        const lensSize = lens.offsetWidth || 150
+        const lensSize = lens.offsetWidth || 136
 
-        // Pixel-exact object-fit: cover geometry so the lens magnifies the EXACT pixel under the cursor
         const coverScale = Math.max(boxW / natW, boxH / natH)
         const coverW = natW * coverScale
         const coverH = natH * coverScale
@@ -334,9 +458,11 @@ function Texture() {
 
   return (
     <section
+      ref={sectionRef}
       id="texture"
       className="texture section"
       data-aura="#8FC3E6,#F4A27E"
+      data-nav-theme="light"
       onPointerMove={e => updatePointer(e, false)}
       onPointerEnter={e => {
         updatePointer(e, true)
@@ -358,7 +484,7 @@ function Texture() {
         <div className="texture__fallback" />
         <div ref={lensRef} className={`texture__lens ${active ? 'texture__lens--active' : ''}`} aria-hidden="true" />
       </div>
-      <p className="texture__line">
+      <p ref={lineRef} className="texture__line">
         real lips. <em>real gloss.</em>
       </p>
     </section>
@@ -387,7 +513,7 @@ function Stand() {
         frame.current = requestAnimationFrame(tick)
       }
     }
-    const scene = document.querySelector<HTMLElement>('#stand .stand__scene')
+    const scene = document.querySelector<HTMLElement>('#stand .stand__bleed')
     scene?.addEventListener('pointermove', wake)
     return () => {
       scene?.removeEventListener('pointermove', wake)
@@ -396,7 +522,7 @@ function Stand() {
   }, [])
 
   const boundTurn = (value: number) =>
-    value < -35 ? -35 - rubberBand(-35 - value, 35) : value > 35 ? 35 + rubberBand(value - 35, 35) : value
+    value < -24 ? -24 - rubberBand(-24 - value, 24) : value > 24 ? 24 + rubberBand(value - 24, 24) : value
 
   const startDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     drag.current = { active: true, lastX: event.clientX }
@@ -410,42 +536,41 @@ function Stand() {
     const delta = event.clientX - drag.current.lastX
     drag.current.lastX = event.clientX
     history.current.add(event.clientX, event.clientY)
-    spring.current.setTarget(boundTurn(spring.current.target + delta * 0.4))
-    spring.current.setVelocity(history.current.velocity().x * 0.4)
+    spring.current.setTarget(boundTurn(spring.current.target + delta * 0.25))
+    spring.current.setVelocity(history.current.velocity().x * 0.25)
   }
   const finishDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!drag.current.active) return
     drag.current.active = false
-    const velocity = history.current.velocity().x * 0.4
+    const velocity = history.current.velocity().x * 0.25
     history.current.reset()
-    spring.current.setTarget(clamp(projectMomentum(spring.current.value, velocity), -35, 35))
+    spring.current.setTarget(clamp(projectMomentum(spring.current.value, velocity), -24, 24))
     spring.current.setVelocity(velocity)
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
   }
 
   return (
     <section id="stand" className="stand section" data-aura="#8FC3E6,#F2EDE4">
-      <div className="stand__inner">
-        <div className="stand__copy">
-          <p className="display">the stand.</p>
-          <p>a soft home for all six.</p>
-        </div>
-        <div
-          className="stand__scene"
-          onPointerDown={startDrag}
-          onPointerMove={moveDrag}
-          onPointerUp={finishDrag}
-          onPointerCancel={finishDrag}
-          style={{ transform: `rotateY(${turn}deg)` }}
-        >
-          <img
-            className="stand__image"
-            src="/media/photos/mochi-blob-stand.webp"
-            alt="MOCHI stand with all six lip jelly shades"
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
+      <div
+        className="stand__bleed"
+        onPointerDown={startDrag}
+        onPointerMove={moveDrag}
+        onPointerUp={finishDrag}
+        onPointerCancel={finishDrag}
+      >
+        <img
+          className="stand__image"
+          src="/media/photos/mochi-blob-stand.webp"
+          alt="MOCHI stand with all six lip jelly shades"
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+          style={{ transform: `perspective(1400px) rotateY(${turn.toFixed(2)}deg)` }}
+        />
+      </div>
+      <div className="stand__copy">
+        <p className="display">the stand.</p>
+        <p>a soft home for all six.</p>
       </div>
     </section>
   )
@@ -533,104 +658,59 @@ function Footer() {
             <span>I</span>
           </div>
         </div>
-        <p className="footer__signoff">SQUEEZE RESPONSIBLY.</p>
+        <p className="footer__signoff">squeeze responsibly.</p>
       </div>
-      <p className="footer__credit">J&amp;J Intelligence</p>
+      <div className="footer__credits">
+        <p className="footer__concept">Concept brand by J&amp;J Intelligence.</p>
+        <p className="footer__credit">Studio demo · MOCHI is an invented brand by J&amp;J Intelligence. Not a real product.</p>
+      </div>
     </footer>
   )
 }
 
-function GalleryModal({
-  state,
-  onClose,
-  onChange,
-}: {
-  state: { items: GalleryItem[]; index: number } | null
-  onClose: () => void
-  onChange: (nextIndex: number) => void
-}) {
-  const startX = useRef<number | null>(null)
-  useEffect(() => {
-    if (!state) return
-    const keydown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-      if (event.key === 'ArrowRight') onChange((state.index + 1) % state.items.length)
-      if (event.key === 'ArrowLeft') onChange((state.index + state.items.length - 1) % state.items.length)
-    }
-    window.addEventListener('keydown', keydown)
-    return () => window.removeEventListener('keydown', keydown)
-  }, [state, onChange, onClose])
-
-  if (!state) return null
-  const item = state.items[state.index]
-
-  return (
-    <div
-      className="wallpaper-preview"
-      role="dialog"
-      aria-modal="true"
-      aria-label={item.title}
-      onClick={onClose}
-      onPointerDown={event => {
-        startX.current = event.clientX
-      }}
-      onPointerUp={event => {
-        if (startX.current !== null && Math.abs(event.clientX - startX.current) > 42) {
-          onChange(
-            event.clientX < startX.current
-              ? (state.index + 1) % state.items.length
-              : (state.index + state.items.length - 1) % state.items.length,
-          )
-        }
-        startX.current = null
-      }}
-    >
-      <button type="button" className="wallpaper-preview__close" onClick={onClose}>
-        CLOSE
-      </button>
-      <button
-        type="button"
-        className="wallpaper-preview__arrow wallpaper-preview__arrow--prev"
-        onClick={event => {
-          event.stopPropagation()
-          onChange((state.index + state.items.length - 1) % state.items.length)
-        }}
-        aria-label="Previous"
-      >
-        ←
-      </button>
-      <img src={item.src} alt={item.alt} />
-      <button
-        type="button"
-        className="wallpaper-preview__arrow wallpaper-preview__arrow--next"
-        onClick={event => {
-          event.stopPropagation()
-          onChange((state.index + 1) % state.items.length)
-        }}
-        aria-label="Next"
-      >
-        →
-      </button>
-      <a
-        className="wallpaper-preview__download"
-        href={item.downloadSrc}
-        download
-        onClick={event => event.stopPropagation()}
-      >
-        ↓ DOWNLOAD
-      </a>
-    </div>
+function PageTransitionCurtain({ phase, label }: { phase: 'idle' | 'in' | 'out'; label: string }) {
+  if (phase === 'idle') return null
+  return createPortal(
+    <div className={`page-curtain page-curtain--${phase}`} aria-hidden="true">
+      <span className="page-curtain__label">{label}</span>
+    </div>,
+    document.body,
   )
 }
 
 function App() {
   const [loaded, setLoaded] = useState(false)
-  const [bag, setBag] = useState(0)
+  const [route, setRoute] = useState<RouteId>(() => readHashRoute())
+  const [curtainPhase, setCurtainPhase] = useState<'idle' | 'in' | 'out'>('idle')
+  const [curtainLabel, setCurtainLabel] = useState('mochi.')
+  const [bagItems, setBagItems] = useState<Record<string, number>>({})
+  const [soft10, setSoft10] = useState(false)
   const [reduced, setReduced] = useState(false)
-  const [galleryModal, setGalleryModal] = useState<{ items: GalleryItem[]; index: number } | null>(null)
+  const [navLight, setNavLight] = useState(false)
   const [flavour, setFlavour] = useState(flavours[0])
   const lenisRef = useRef<Lenis | null>(null)
+  const transitionTimers = useRef<number[]>([])
   const context = useMemo(() => ({ flavour, setFlavour }), [flavour])
+
+  const bagCount = useMemo(() => Object.values(bagItems).reduce((sum, n) => sum + n, 0), [bagItems])
+
+  const addFlavourToBag = useCallback((item: Flavour) => {
+    setBagItems(prev => ({ ...prev, [item.key]: (prev[item.key] || 0) + 1 }))
+  }, [])
+
+  const updateBagQty = useCallback((key: string, delta: number) => {
+    setBagItems(prev => {
+      const next = (prev[key] || 0) + delta
+      if (next <= 0) {
+        const clone = { ...prev }
+        delete clone[key]
+        return clone
+      }
+      return { ...prev, [key]: next }
+    })
+  }, [])
+
+  const clearBag = useCallback(() => setBagItems({}), [])
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -645,8 +725,94 @@ function App() {
     document.documentElement.style.setProperty('--aura', flavour.aura)
   }, [flavour])
 
+  // Sync browser back/forward hash changes
   useEffect(() => {
-    if (reduced) return
+    const onHash = () => {
+      const next = readHashRoute()
+      setRoute(next)
+      window.scrollTo(0, 0)
+    }
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
+  // Creative minimalist vertical shutter curtain page navigation
+  const navigate = useCallback(
+    (next: RouteId, opts?: { applySoft10?: boolean }) => {
+      if (opts?.applySoft10) setSoft10(true)
+      if (next === route) {
+        if (lenisRef.current && !reduced) lenisRef.current.scrollTo(0, { duration: 0.9 })
+        else window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' })
+        return
+      }
+
+      transitionTimers.current.forEach(t => window.clearTimeout(t))
+      transitionTimers.current = []
+
+      const targetHash = next === 'home' ? '#/' : `#/${next}`
+      if (reduced) {
+        setRoute(next)
+        window.history.pushState(null, '', targetHash)
+        window.scrollTo(0, 0)
+        return
+      }
+
+      setCurtainLabel(ROUTE_TITLES[next])
+      setCurtainPhase('in')
+
+      const t1 = window.setTimeout(() => {
+        ScrollTrigger.getAll().forEach(st => st.kill())
+        setRoute(next)
+        window.history.pushState(null, '', targetHash)
+        window.scrollTo(0, 0)
+        setNavLight(false)
+        setCurtainPhase('out')
+      }, 270)
+
+      const t2 = window.setTimeout(() => {
+        setCurtainPhase('idle')
+        ScrollTrigger.refresh()
+      }, 610)
+
+      transitionTimers.current = [t1, t2]
+    },
+    [route, reduced],
+  )
+
+  useEffect(() => {
+    return () => {
+      transitionTimers.current.forEach(t => window.clearTimeout(t))
+    }
+  }, [])
+
+  // Switch nav to crisp white over #texture on Home
+  useEffect(() => {
+    if (route !== 'home') {
+      setNavLight(false)
+      return
+    }
+    const checkNavTheme = () => {
+      const darkSections = Array.from(document.querySelectorAll<HTMLElement>('[data-nav-theme="light"]'))
+      const navY = 36
+      const overDark = darkSections.some(el => {
+        const rect = el.getBoundingClientRect()
+        return rect.top <= navY && rect.bottom >= navY
+      })
+      setNavLight(prev => (prev === overDark ? prev : overDark))
+    }
+
+    checkNavTheme()
+    window.addEventListener('scroll', checkNavTheme, { passive: true })
+    window.addEventListener('resize', checkNavTheme, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', checkNavTheme)
+      window.removeEventListener('resize', checkNavTheme)
+    }
+  }, [route])
+
+  // Smooth Lenis scroll on Home (and clean natural scrolling on subpages)
+  useEffect(() => {
+    if (reduced || route !== 'home') return
     const lenis = new Lenis({
       duration: 1.15,
       smoothWheel: true,
@@ -663,16 +829,16 @@ function App() {
       lenis.destroy()
       lenisRef.current = null
     }
-  }, [reduced])
+  }, [reduced, route])
 
   useEffect(() => {
     if (loaded) {
       document.body.classList.add('is-ready')
-      window.setTimeout(() => ScrollTrigger.refresh(), 140)
+      window.setTimeout(() => ScrollTrigger.refresh(), 160)
     }
-  }, [loaded])
+  }, [loaded, route])
 
-  const jump = (id: string) => {
+  const jumpOnHome = (id: string) => {
     const el = document.getElementById(id)
     const target = (el?.closest('.pin-spacer') as HTMLElement | null) || el
     if (!target) return
@@ -686,27 +852,63 @@ function App() {
   return (
     <FlavourContext.Provider value={context}>
       <Preloader done={loaded} onDone={() => setLoaded(true)} />
+      <PageTransitionCurtain phase={curtainPhase} label={curtainLabel} />
       <div className={`app ${reduced ? 'reduced-motion' : ''}`}>
-        <GlobalAuraCanvas />
-        <Header bag={bag} onJump={jump} />
-        <main>
-          <PhysicsHero onJump={jump} />
-          <PhysicsBelief />
-          <Flavours bag={bag} setBag={setBag} />
-          <Texture />
-          <Stand />
-          <BlobjectShowcase
-            reduced={reduced}
-            onOpenItem={(items, index) => setGalleryModal({ items, index })}
-          />
-        </main>
-        <Footer />
+        <GlobalAuraCanvas activeAura={flavour.aura} activeGlow={flavour.jelly} />
+        <Header bag={bagCount} light={navLight} route={route} onNavigate={navigate} />
+
+        {route === 'home' && (
+          <>
+            <main>
+              <PhysicsHero onJump={jumpOnHome} />
+              <div className="shutter-over-hero">
+                <PhysicsBelief />
+              </div>
+              <Flavours
+                onAddFlavour={addFlavourToBag}
+                onOpenFlavoursPage={() => navigate('flavours')}
+              />
+              <SoftTicker onOpenBag={() => navigate('bag', { applySoft10: true })} />
+              <Texture />
+              <CampaignGallery reduced={reduced} />
+              <Stand />
+              <WallpapersSection />
+            </main>
+            <Footer />
+          </>
+        )}
+
+        {route === 'flavours' && (
+          <main className="subpage-enter">
+            <FlavoursPage
+              bagItems={bagItems}
+              onAddFlavour={addFlavourToBag}
+              onNavigate={navigate}
+              onSelectGlobalFlavour={setFlavour}
+            />
+          </main>
+        )}
+
+        {route === 'wallpapers' && (
+          <main className="subpage-enter">
+            <WallpapersPage onNavigate={navigate} onSelectGlobalFlavour={setFlavour} />
+          </main>
+        )}
+
+        {route === 'bag' && (
+          <main className="subpage-enter">
+            <BagPage
+              bagItems={bagItems}
+              soft10={soft10}
+              onToggleSoft10={() => setSoft10(v => !v)}
+              onUpdateQty={updateBagQty}
+              onAddFlavour={addFlavourToBag}
+              onClearBag={clearBag}
+              onNavigate={navigate}
+            />
+          </main>
+        )}
       </div>
-      <GalleryModal
-        state={galleryModal}
-        onClose={() => setGalleryModal(null)}
-        onChange={nextIndex => setGalleryModal(prev => (prev ? { ...prev, index: nextIndex } : null))}
-      />
     </FlavourContext.Provider>
   )
 }

@@ -1,0 +1,244 @@
+/* ==========================================================================
+   MOCHI — Wallpapers ("take the colour home.")
+   Six real 1290×2796 phone wallpapers, straight edges, print-proof typography.
+   ========================================================================== */
+
+.wp-section {
+  position: relative;
+  min-height: 100svh;
+  padding: clamp(96px, 13vh, 144px) clamp(20px, 4.5vw, 64px) clamp(72px, 10vh, 120px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(40px, 6vh, 64px);
+  background: transparent;
+}
+
+.wp-section__title {
+  margin: 0;
+  font-family: var(--display, 'Krona One', sans-serif);
+  font-size: clamp(2rem, 3.8vw, 3.6rem);
+  font-weight: 400;
+  line-height: 0.96;
+  letter-spacing: -0.035em;
+  color: var(--ink, #141414);
+}
+
+.wp-section__title em {
+  font-family: var(--emotion, 'Instrument Serif', serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.18em;
+  letter-spacing: -0.01em;
+}
+
+.wp-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: clamp(16px, 2vw, 28px);
+  align-items: start;
+}
+
+.wp-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wp-item__frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1290 / 2796;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.wp-item__frame:focus-visible {
+  outline: 2px solid var(--jelly, #B3122E);
+  outline-offset: 4px;
+}
+
+.wp-item__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+.wp-item__frame:hover .wp-item__img {
+  transform: none !important;
+}
+
+.wp-item__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.wp-item__label {
+  font-family: var(--micro, 'Geist Mono Variable', monospace);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink, #141414);
+  opacity: 0.72;
+}
+
+.wp-item__download {
+  display: inline-block;
+  padding: 2px 0 4px;
+  border: 0;
+  border-bottom: 1px solid rgba(20, 20, 20, 0.3);
+  border-radius: 0 !important;
+  background: transparent;
+  color: var(--ink, #141414);
+  font-family: var(--micro, 'Geist Mono Variable', monospace);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+.wp-item__download:hover,
+.wp-item__download:focus-visible {
+  border-bottom-color: var(--ink, #141414);
+}
+
+/* Full-screen proof modal on cream */
+.wp-proof {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 72px clamp(20px, 6vw, 88px) 44px;
+  background: var(--cream, #F2EDE4);
+  color: var(--ink, #141414);
+}
+
+.wp-proof__bar {
+  position: absolute;
+  top: 24px;
+  left: clamp(20px, 4.5vw, 64px);
+  right: clamp(20px, 4.5vw, 64px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 2;
+}
+
+.wp-proof__label,
+.wp-proof__close,
+.wp-proof__download {
+  font-family: var(--micro, 'Geist Mono Variable', monospace);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink, #141414);
+  background: transparent;
+}
+
+.wp-proof__close {
+  padding: 6px 0;
+}
+
+.wp-proof__close:hover,
+.wp-proof__close:focus-visible {
+  border-bottom: 1px solid var(--ink, #141414);
+}
+
+.wp-proof__stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.wp-proof__frame {
+  position: relative;
+  height: min(74svh, 680px);
+  aspect-ratio: 1290 / 2796;
+}
+
+.wp-proof__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.wp-proof__download {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--ink, #141414);
+}
+
+.wp-proof__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--ink, #141414);
+  font-family: var(--ui, 'Geist Variable', sans-serif);
+  font-size: 22px;
+  z-index: 2;
+}
+
+.wp-proof__arrow--prev {
+  left: clamp(12px, 3vw, 40px);
+}
+
+.wp-proof__arrow--next {
+  right: clamp(12px, 3vw, 40px);
+}
+
+@media (max-width: 1180px) {
+  .wp-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 28px 20px;
+  }
+}
+
+@media (max-width: 767px) {
+  .wp-section {
+    min-height: 0;
+    padding: 96px 20px 64px;
+    gap: 32px;
+  }
+
+  .wp-section__title {
+    font-size: clamp(1.85rem, 8.2vw, 2.5rem);
+  }
+
+  .wp-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px 16px;
+  }
+}
