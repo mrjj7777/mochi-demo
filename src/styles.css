@@ -1752,11 +1752,10 @@ html { scrollbar-color: var(--jelly) var(--cream); scrollbar-width: thin; }
 
 
 /* ==========================================================================
-   GLOBAL UNIQUE ARCHITECTURAL TYPOGRAPHY LOCK (ZERO CURSIVE / ZERO ITALIC)
-   Sculptural upright Syne + architectural wireframe stroke contrast on display
+   LUXURY EDITORIAL TYPOGRAPHY LOCK (SOLID UPRIGHT INSTRUMENT SERIF — ZERO CURSIVE, ZERO OUTLINES)
    ========================================================================== */
 :root {
-  --emotion: 'Syne', sans-serif !important;
+  --emotion: 'Instrument Serif', Georgia, serif !important;
 }
 
 em,
@@ -1782,13 +1781,14 @@ i,
 .bag-row__name em,
 .bag-perk__line em,
 .bag-receipt__title em {
-  font-family: 'Syne', sans-serif !important;
+  font-family: 'Instrument Serif', Georgia, serif !important;
   font-style: normal !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.03em !important;
+  font-weight: 400 !important;
+  color: inherit !important;
+  -webkit-text-stroke: 0 !important;
+  letter-spacing: -0.015em !important;
 }
 
-/* Signature Sculptural Wireframe Architectural Outline on Monumental Display Accents */
 .mochi-hero__headline em,
 .campaign-gallery__title em,
 .wp-section__title em,
@@ -1799,54 +1799,105 @@ i,
 .wpe-outro__link em,
 .bag-heading em,
 .bag-receipt__title em {
-  font-weight: 800 !important;
-  font-size: 1.04em !important;
-  color: transparent !important;
-  -webkit-text-stroke: 1.45px var(--ink, #141414) !important;
-  letter-spacing: -0.035em !important;
+  font-size: 1.24em !important;
+  line-height: 0.88 !important;
 }
 
-/* Crisp Upright Syne Architectural Weight on Editorial Sub-Accents & Signoff */
 .footer__signoff {
-  font-family: 'Syne', sans-serif !important;
+  font-family: 'Instrument Serif', Georgia, serif !important;
   font-style: normal !important;
-  font-weight: 700 !important;
-  font-size: clamp(22px, 2.8vw, 40px) !important;
-  letter-spacing: 0.06em !important;
+  font-weight: 400 !important;
+  font-size: clamp(28px, 3.6vw, 52px) !important;
+  letter-spacing: -0.01em !important;
   text-transform: lowercase !important;
+  color: var(--ink) !important;
 }
 
 .stand__copy p:last-child {
-  font-family: 'Syne', sans-serif !important;
+  font-family: 'Instrument Serif', Georgia, serif !important;
   font-style: normal !important;
-  font-weight: 600 !important;
-  letter-spacing: -0.02em !important;
-}
-
-.texture__line em {
-  color: transparent !important;
-  -webkit-text-stroke: 1.15px var(--milk, #FAF7F2) !important;
-  font-weight: 800 !important;
-}
-
-.wpe-spread__num {
-  font-family: 'Syne', sans-serif !important;
-  font-weight: 800 !important;
-  color: transparent !important;
-  -webkit-text-stroke: 1.2px rgba(20, 20, 20, 0.24) !important;
-  opacity: 1 !important;
-}
-
-.soft-ticker__italic {
-  font-family: 'Syne', sans-serif !important;
-  font-weight: 600 !important;
-  font-size: clamp(14px, 1.1vw, 17px) !important;
+  font-weight: 400 !important;
   letter-spacing: -0.01em !important;
 }
 
+.wpe-spread__num {
+  font-family: 'Instrument Serif', Georgia, serif !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
+  color: var(--ink) !important;
+  opacity: 0.16 !important;
+}
+
+.soft-ticker__italic {
+  font-family: 'Instrument Serif', Georgia, serif !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
+  font-size: clamp(19px, 1.45vw, 23px) !important;
+  letter-spacing: -0.005em !important;
+}
+
 .page-curtain__label {
-  font-family: 'Syne', sans-serif !important;
-  font-weight: 800 !important;
-  color: transparent !important;
-  -webkit-text-stroke: 1.4px var(--ink, #141414) !important;
+  font-family: 'Instrument Serif', Georgia, serif !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
+  color: var(--ink) !important;
+}
+
+
+/* Minimal luxury top-nav SOUND control with 3 hairline animated bars */
+.sound-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  font: 500 12px/1 var(--micro) !important;
+  letter-spacing: 0.1em !important;
+  color: inherit;
+  opacity: 0.64;
+  transition: opacity 220ms ease;
+}
+
+.sound-toggle:hover,
+.sound-toggle.is-on {
+  opacity: 1;
+}
+
+.sound-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 10px;
+}
+
+.sound-bars i {
+  display: block;
+  width: 1.5px;
+  height: 3px;
+  background: currentColor;
+  font-style: normal;
+  transition: height 220ms ease;
+}
+
+.sound-toggle.is-on .sound-bars i:nth-child(1) {
+  animation: sound-eq 1.15s ease-in-out infinite;
+}
+
+.sound-toggle.is-on .sound-bars i:nth-child(2) {
+  animation: sound-eq 0.9s ease-in-out 0.22s infinite;
+}
+
+.sound-toggle.is-on .sound-bars i:nth-child(3) {
+  animation: sound-eq 1.35s ease-in-out 0.45s infinite;
+}
+
+@keyframes sound-eq {
+  0%,
+  100% {
+    height: 3px;
+  }
+  50% {
+    height: 10px;
+  }
 }

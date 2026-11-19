@@ -4,6 +4,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
 import Lenis from 'lenis'
+import { luxuryPiano } from './audio/luxuryPiano'
 import { flavours, type Flavour } from './brand'
 import PhysicsBelief from './components/Belief'
 import CampaignGallery from './components/CampaignGallery'
@@ -102,11 +103,15 @@ function Header({
   bag,
   light,
   route,
+  soundOn,
+  onToggleSound,
   onNavigate,
 }: {
   bag: number
   light: boolean
   route: RouteId
+  soundOn: boolean
+  onToggleSound: () => void
   onNavigate: (next: RouteId) => void
 }) {
   return (
@@ -144,6 +149,20 @@ function Header({
           onClick={() => onNavigate('bag')}
         >
           {route === 'bag' ? `[ BAG (${bag}) ]` : `BAG (${bag})`}
+        </button>
+        <button
+          type="button"
+          className={`sound-toggle ${soundOn ? 'is-on' : ''}`}
+          onClick={onToggleSound}
+          aria-pressed={soundOn}
+          aria-label={soundOn ? 'Mute luxury background piano' : 'Play luxury background piano'}
+        >
+          <span className="sound-bars" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+          <span>{soundOn ? 'SOUND' : 'MUTE'}</span>
         </button>
       </nav>
     </header>
@@ -359,7 +378,7 @@ function Texture() {
   const current = useRef({ x: 0, y: 0 })
   const [active, setActive] = useState(false)
 
-  // Creative minimalist scroll presentation: architectural shutter aperture reveal + macro optical depth pull
+  // Dramatic scroll-driven window expansion: starts as a compact framed studio square and expands to 100vw full-bleed
   useGSAP(
     () => {
       const section = sectionRef.current
@@ -373,21 +392,21 @@ function Texture() {
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: section,
-          start: 'top bottom',
-          end: 'center center',
-          scrub: 0.75,
+          start: 'top 92%',
+          end: 'center 42%',
+          scrub: 0.65,
         },
       })
 
       tl.fromTo(
         photo,
-        { clipPath: 'inset(10% 8% 10% 8%)' },
-        { clipPath: 'inset(0% 0% 0% 0%)', ease: 'none' },
+        { clipPath: 'inset(28% 32% 28% 32%)', y: 48 },
+        { clipPath: 'inset(0% 0% 0% 0%)', y: 0, ease: 'power1.out' },
         0,
-      ).fromTo(img, { scale: 1.14 }, { scale: 1.0, ease: 'none' }, 0)
+      ).fromTo(img, { scale: 1.38 }, { scale: 1.0, ease: 'power1.out' }, 0)
 
       if (line) {
-        tl.fromTo(line, { y: 26, opacity: 0 }, { y: 0, opacity: 1, ease: 'none' }, 0.35)
+        tl.fromTo(line, { y: 34, opacity: 0 }, { y: 0, opacity: 1, ease: 'none' }, 0.58)
       }
 
       return () => {
@@ -687,6 +706,8 @@ function App() {
   const [soft10, setSoft10] = useState(false)
   const [reduced, setReduced] = useState(false)
   const [navLight, setNavLight] = useState(false)
+  const [soundOn, setSoundOn] = useState(false)
+  const userMutedRef = useRef(false)
   const [flavour, setFlavour] = useState(flavours[0])
   const lenisRef = useRef<Lenis | null>(null)
   const transitionTimers = useRef<number[]>([])
@@ -711,6 +732,32 @@ function App() {
   }, [])
 
   const clearBag = useCallback(() => setBagItems({}), [])
+
+  // Subscribe to luxury Yamaha C5 piano state + graceful auto-start on first user interaction
+  useEffect(() => {
+    const unsub = luxuryPiano.subscribe(setSoundOn)
+    const unlock = () => {
+      if (userMutedRef.current || luxuryPiano.isPlaying()) return
+      luxuryPiano.start().catch(() => {})
+    }
+    window.addEventListener('pointerdown', unlock, { once: true, passive: true })
+    window.addEventListener('keydown', unlock, { once: true })
+    return () => {
+      unsub()
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
+  }, [])
+
+  const toggleSound = useCallback(() => {
+    if (luxuryPiano.isPlaying()) {
+      userMutedRef.current = true
+      luxuryPiano.stop()
+    } else {
+      userMutedRef.current = false
+      luxuryPiano.start().catch(() => {})
+    }
+  }, [])
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -855,7 +902,14 @@ function App() {
       <PageTransitionCurtain phase={curtainPhase} label={curtainLabel} />
       <div className={`app ${reduced ? 'reduced-motion' : ''}`}>
         <GlobalAuraCanvas activeAura={flavour.aura} activeGlow={flavour.jelly} />
-        <Header bag={bagCount} light={navLight} route={route} onNavigate={navigate} />
+        <Header
+          bag={bagCount}
+          light={navLight}
+          route={route}
+          soundOn={soundOn}
+          onToggleSound={toggleSound}
+          onNavigate={navigate}
+        />
 
         {route === 'home' && (
           <>

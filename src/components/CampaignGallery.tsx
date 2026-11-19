@@ -383,22 +383,20 @@ export default function CampaignGallery({ reduced = false }: { reduced?: boolean
       const currentOffset = reduced ? offsetSpring.target : offsetSpring.step(dt)
       const velocity = offsetSpring.velocity
 
-      // Strong inverse 3D Diorama Box parallax: moving mouse right swings the entire 3D room left
-      // and pivots perspective deep into the opposite curved wall (true inside-the-box spatial feel)
-      camXSpring.setTarget(reduced ? 0 : -pointerNormX * 1.15)
-      camYSpring.setTarget(reduced ? 0 : pointerNormY * 0.48)
-      roomYawSpring.setTarget(reduced ? 0 : -pointerNormX * 0.24)
-      roomPitchSpring.setTarget(reduced ? 0 : -pointerNormY * 0.11)
+      // Exact unseen.co 3D architectural room dolly camera:
+      // Camera glides smoothly across a curved 3D rail while locked onto a deep central anchor (0, 0, -1.6),
+      // making the entire curved 29-poster room pivot around you with true inside-a-3D-box spatial depth.
+      camXSpring.setTarget(reduced ? 0 : pointerNormX * 1.95)
+      camYSpring.setTarget(reduced ? 0 : -pointerNormY * 0.78)
+      roomYawSpring.setTarget(reduced ? 0 : Math.abs(pointerNormX) * 0.42)
 
       const cx = camXSpring.step(dt)
       const cy = camYSpring.step(dt)
-      const yaw = roomYawSpring.step(dt)
-      const pitch = roomPitchSpring.step(dt)
+      const pullZ = roomYawSpring.step(dt)
 
-      camera.position.set(cx, cy, 5.15)
-      camera.lookAt(-cx * 0.42, -cy * 0.35, 0)
-      scene.rotation.y = yaw
-      scene.rotation.x = pitch
+      camera.position.set(cx, cy, 5.15 - pullZ)
+      camera.lookAt(0, 0, -1.65)
+      scene.rotation.set(0, 0, 0)
 
       // Position meshes dynamically around x = 0 so frustum & raycasting stay exact across all 29 frames
       for (let i = 0; i < meshes.length; i += 1) {
