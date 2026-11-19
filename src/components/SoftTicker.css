@@ -2,16 +2,16 @@
   position: relative;
   z-index: 4;
   width: 100%;
-  border-top: 1px solid rgba(20, 20, 20, 0.14);
-  border-bottom: 1px solid rgba(20, 20, 20, 0.14);
-  background: rgba(242, 237, 228, 0.72);
+  border-top: 1px solid rgba(20, 20, 20, 0.08);
+  border-bottom: 1px solid rgba(20, 20, 20, 0.08);
+  background: transparent;
   overflow: hidden;
 }
 
 .soft-ticker__btn {
   display: block;
   width: 100%;
-  padding: 13px 0;
+  padding: 18px 0;
   margin: 0;
   border: 0;
   background: transparent;
@@ -24,7 +24,7 @@
 .soft-ticker__track {
   display: flex;
   width: max-content;
-  animation: soft-ticker-scroll 34s linear infinite;
+  animation: soft-ticker-scroll 46s linear infinite;
   will-change: transform;
 }
 
@@ -42,19 +42,43 @@
 .soft-ticker__item {
   display: inline-flex;
   align-items: center;
-  gap: 28px;
-  padding-right: 28px;
+  gap: 26px;
+  padding-right: 26px;
+  white-space: nowrap;
+}
+
+.soft-ticker__italic {
+  font-family: var(--emotion, 'Instrument Serif', serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(18px, 1.45vw, 22px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--ink, #141414);
+  opacity: 0.88;
+}
+
+.soft-ticker__mono {
   font-family: var(--micro, 'Geist Mono Variable', monospace);
   font-size: 12px;
   font-weight: 500;
   line-height: 1;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  white-space: nowrap;
+  color: var(--jelly, #B3122E);
 }
 
-.soft-ticker__sep {
-  opacity: 0.36;
+.soft-ticker__dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  background: var(--jelly, #B3122E);
+  opacity: 0.55;
+}
+
+.soft-ticker__dot--muted {
+  background: var(--ink, #141414);
+  opacity: 0.22;
 }
 
 @keyframes soft-ticker-scroll {

@@ -305,34 +305,30 @@ export default function CampaignGallery({ reduced = false }: { reduced?: boolean
 
       const mesh = new THREE.Mesh(geometry, mat)
       mesh.position.set(idx * STRIDE, 0, 0)
+      mesh.frustumCulled = false
       mesh.userData = { index: idx }
       scene.add(mesh)
       meshes.push(mesh)
       materials.push(mat)
 
-      // Eagerly load first 6, progressively load remaining 23 cleanly
-      const startLoad = () => {
-        if (disposed) return
-        loader.load(item.src720, tex => {
-          if (disposed) {
-            tex.dispose()
-            return
-          }
-          tex.colorSpace = THREE.SRGBColorSpace
-          tex.anisotropy = maxAniso
-          tex.generateMipmaps = true
-          tex.minFilter = THREE.LinearMipmapLinearFilter
-          tex.magFilter = THREE.LinearFilter
-          tex.needsUpdate = true
-          textures.push(tex)
-          mat.uniforms.uMap.value = tex
-          mat.uniforms.uLoaded.value = 1
-          wake()
-        })
-      }
-
-      if (idx < 6) startLoad()
-      else window.setTimeout(startLoad, 60 + (idx - 6) * 28)
+      // Load all 29 lightweight -720.webp posters immediately so scrubbing 01 -> 29 never shows blanks
+      loader.load(item.src720, tex => {
+        if (disposed) {
+          tex.dispose()
+          return
+        }
+        // Pass raw sRGB bytes untouched (NoColorSpace + NoToneMapping = 100% bit-exact original poster colours)
+        tex.colorSpace = THREE.NoColorSpace
+        tex.anisotropy = maxAniso
+        tex.generateMipmaps = true
+        tex.minFilter = THREE.LinearMipmapLinearFilter
+        tex.magFilter = THREE.LinearFilter
+        tex.needsUpdate = true
+        textures.push(tex)
+        mat.uniforms.uMap.value = tex
+        mat.uniforms.uLoaded.value = 1
+        wake()
+      })
     })
 
     const resize = () => {
@@ -358,8 +354,10 @@ export default function CampaignGallery({ reduced = false }: { reduced?: boolean
 
     const pointerHistory = new PointerHistory(5)
     const offsetSpring = createSpring({ stiffness: 135, damping: 24, mass: 1 }, 0)
-    const camXSpring = createSpring('settle', 0)
-    const camYSpring = createSpring('settle', 0)
+    const camXSpring = createSpring({ stiffness: 90, damping: 18, mass: 1 }, 0)
+    const camYSpring = createSpring({ stiffness: 90, damping: 18, mass: 1 }, 0)
+    const roomYawSpring = createSpring({ stiffness: 85, damping: 18, mass: 1 }, 0)
+    const roomPitchSpring = createSpring({ stiffness: 85, damping: 18, mass: 1 }, 0)
     const raycaster = new THREE.Raycaster()
     const pointerNdc = new THREE.Vector2()
 
@@ -385,20 +383,31 @@ export default function CampaignGallery({ reduced = false }: { reduced?: boolean
       const currentOffset = reduced ? offsetSpring.target : offsetSpring.step(dt)
       const velocity = offsetSpring.velocity
 
-      // Subtle optical mouse parallax
-      camXSpring.setTarget(reduced ? 0 : pointerNormX * 0.2)
-      camYSpring.setTarget(reduced ? 0 : -pointerNormY * 0.1)
-      camera.position.x = camXSpring.step(dt)
-      camera.position.y = camYSpring.step(dt)
-      camera.lookAt(camera.position.x * 0.35, camera.position.y * 0.25, 0)
+      // Strong inverse 3D Diorama Box parallax: moving mouse right swings the entire 3D room left
+      // and pivots perspective deep into the opposite curved wall (true inside-the-box spatial feel)
+      camXSpring.setTarget(reduced ? 0 : -pointerNormX * 1.15)
+      camYSpring.setTarget(reduced ? 0 : pointerNormY * 0.48)
+      roomYawSpring.setTarget(reduced ? 0 : -pointerNormX * 0.24)
+      roomPitchSpring.setTarget(reduced ? 0 : -pointerNormY * 0.11)
 
-      // Update uniforms and cull meshes far off the panoramic arc for silky 60fps
+      const cx = camXSpring.step(dt)
+      const cy = camYSpring.step(dt)
+      const yaw = roomYawSpring.step(dt)
+      const pitch = roomPitchSpring.step(dt)
+
+      camera.position.set(cx, cy, 5.15)
+      camera.lookAt(-cx * 0.42, -cy * 0.35, 0)
+      scene.rotation.y = yaw
+      scene.rotation.x = pitch
+
+      // Position meshes dynamically around x = 0 so frustum & raycasting stay exact across all 29 frames
       for (let i = 0; i < meshes.length; i += 1) {
         const arcX = i * STRIDE - currentOffset
-        const visible = Math.abs(arcX) < RADIUS * 1.48
+        const visible = Math.abs(arcX) < RADIUS * 1.65
         meshes[i].visible = visible
+        meshes[i].position.x = arcX
         if (visible) {
-          materials[i].uniforms.uOffset.value = -currentOffset
+          materials[i].uniforms.uOffset.value = 0
           materials[i].uniforms.uVelocity.value = velocity
         }
       }
@@ -414,7 +423,9 @@ export default function CampaignGallery({ reduced = false }: { reduced?: boolean
         isDragging ||
         !offsetSpring.atRest(0.0008) ||
         !camXSpring.atRest(0.0005) ||
-        !camYSpring.atRest(0.0005)
+        !camYSpring.atRest(0.0005) ||
+        !roomYawSpring.atRest(0.0005) ||
+        !roomPitchSpring.atRest(0.0005)
 
       if (moving || activeInView) {
         rafId = requestAnimationFrame(tick)

@@ -1749,3 +1749,104 @@ html { scrollbar-color: var(--jelly) var(--cream); scrollbar-width: thin; }
     font-size: 12px !important;
   }
 }
+
+
+/* ==========================================================================
+   GLOBAL UNIQUE ARCHITECTURAL TYPOGRAPHY LOCK (ZERO CURSIVE / ZERO ITALIC)
+   Sculptural upright Syne + architectural wireframe stroke contrast on display
+   ========================================================================== */
+:root {
+  --emotion: 'Syne', sans-serif !important;
+}
+
+em,
+i,
+.footer__signoff,
+.stand__copy p:last-child,
+.page-curtain__label,
+.soft-ticker__italic,
+.wpe-spread__num,
+.flavour-panel__mood em,
+.texture__line em,
+.mochi-hero__headline em,
+.campaign-gallery__title em,
+.wp-section__title em,
+.fp-intro__title em,
+.fp-chapter__mood em,
+.fp-outro__link em,
+.wpe-intro__title em,
+.wpe-spread__name em,
+.wpe-outro__link em,
+.bag-heading em,
+.bag-empty__line em,
+.bag-row__name em,
+.bag-perk__line em,
+.bag-receipt__title em {
+  font-family: 'Syne', sans-serif !important;
+  font-style: normal !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+}
+
+/* Signature Sculptural Wireframe Architectural Outline on Monumental Display Accents */
+.mochi-hero__headline em,
+.campaign-gallery__title em,
+.wp-section__title em,
+.fp-intro__title em,
+.fp-outro__link em,
+.wpe-intro__title em,
+.wpe-spread__name em,
+.wpe-outro__link em,
+.bag-heading em,
+.bag-receipt__title em {
+  font-weight: 800 !important;
+  font-size: 1.04em !important;
+  color: transparent !important;
+  -webkit-text-stroke: 1.45px var(--ink, #141414) !important;
+  letter-spacing: -0.035em !important;
+}
+
+/* Crisp Upright Syne Architectural Weight on Editorial Sub-Accents & Signoff */
+.footer__signoff {
+  font-family: 'Syne', sans-serif !important;
+  font-style: normal !important;
+  font-weight: 700 !important;
+  font-size: clamp(22px, 2.8vw, 40px) !important;
+  letter-spacing: 0.06em !important;
+  text-transform: lowercase !important;
+}
+
+.stand__copy p:last-child {
+  font-family: 'Syne', sans-serif !important;
+  font-style: normal !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+}
+
+.texture__line em {
+  color: transparent !important;
+  -webkit-text-stroke: 1.15px var(--milk, #FAF7F2) !important;
+  font-weight: 800 !important;
+}
+
+.wpe-spread__num {
+  font-family: 'Syne', sans-serif !important;
+  font-weight: 800 !important;
+  color: transparent !important;
+  -webkit-text-stroke: 1.2px rgba(20, 20, 20, 0.24) !important;
+  opacity: 1 !important;
+}
+
+.soft-ticker__italic {
+  font-family: 'Syne', sans-serif !important;
+  font-weight: 600 !important;
+  font-size: clamp(14px, 1.1vw, 17px) !important;
+  letter-spacing: -0.01em !important;
+}
+
+.page-curtain__label {
+  font-family: 'Syne', sans-serif !important;
+  font-weight: 800 !important;
+  color: transparent !important;
+  -webkit-text-stroke: 1.4px var(--ink, #141414) !important;
+}

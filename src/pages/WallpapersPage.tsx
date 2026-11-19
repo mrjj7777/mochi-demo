@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useGSAP } from '@gsap/react'
 import { flavours } from '../brand'
-import { PointerHistory, clamp, createSpring, projectMomentum, rubberBand } from '../physics'
 import './WallpapersPage.css'
+
+gsap.registerPlugin(ScrollTrigger, useGSAP)
 
 const PRINTS = flavours.map((f, i) => ({
   idx: i,
@@ -23,234 +27,219 @@ export default function WallpapersPage({
   onNavigate: (route: 'home' | 'flavours' | 'wallpapers' | 'bag') => void
   onSelectGlobalFlavour: (item: (typeof flavours)[number]) => void
 }) {
+  const rootRef = useRef<HTMLDivElement>(null)
   const [activeIdx, setActiveIdx] = useState(0)
-  const [fullscreen, setFullscreen] = useState(false)
-  const deckRef = useRef<HTMLDivElement>(null)
-  const cardRef = useRef<HTMLDivElement>(null)
-
-  const xSpring = useRef(createSpring('heavy', 0))
-  const rotSpring = useRef(createSpring('heavy', 0))
-  const history = useRef(new PointerHistory(5))
-  const drag = useRef({ active: false, startX: 0 })
-  const rafRef = useRef(0)
-
-  const active = PRINTS[activeIdx]
+  const [fullscreenIdx, setFullscreenIdx] = useState<number | null>(null)
 
   useEffect(() => {
-    onSelectGlobalFlavour(flavours[activeIdx])
+    onSelectGlobalFlavour(flavours[activeIdx] ?? flavours[0])
   }, [activeIdx, onSelectGlobalFlavour])
 
   useEffect(() => {
+    if (fullscreenIdx === null) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && fullscreen) setFullscreen(false)
-      if (e.key === 'ArrowRight') setActiveIdx(i => (i + 1) % PRINTS.length)
-      if (e.key === 'ArrowLeft') setActiveIdx(i => (i - 1 + PRINTS.length) % PRINTS.length)
+      if (e.key === 'Escape') setFullscreenIdx(null)
+      if (e.key === 'ArrowRight') setFullscreenIdx(i => (i === null ? 0 : (i + 1) % PRINTS.length))
+      if (e.key === 'ArrowLeft') setFullscreenIdx(i => (i === null ? 0 : (i - 1 + PRINTS.length) % PRINTS.length))
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [fullscreen])
+  }, [fullscreenIdx])
 
-  // Heavy-spring interactive print-proof drag & flick switcher
-  useEffect(() => {
-    let disposed = false
-    let lastNow = performance.now()
+  // Monumental scroll-driven mask aperture reveals & vertical depth parallax across all 6 spreads
+  useGSAP(
+    () => {
+      const root = rootRef.current
+      if (!root) return
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-    const tick = (now: number) => {
-      rafRef.current = 0
-      if (disposed) return
-      const dt = Math.min(0.05, Math.max(0.001, (now - lastNow) / 1000))
-      lastNow = now
+      const spreads = gsap.utils.toArray<HTMLElement>('.wpe-spread', root)
+      spreads.forEach((spread, idx) => {
+        ScrollTrigger.create({
+          trigger: spread,
+          start: 'top center',
+          end: 'bottom center',
+          onEnter: () => setActiveIdx(idx),
+          onEnterBack: () => setActiveIdx(idx),
+        })
 
-      const x = xSpring.current.step(dt)
-      const r = rotSpring.current.step(dt)
-      if (cardRef.current) {
-        cardRef.current.style.transform = `translate3d(${x.toFixed(2)}px, 0, 0) rotate(${r.toFixed(2)}deg)`
-      }
+        if (reduced) return
 
-      if (drag.current.active || !xSpring.current.atRest(0.05) || !rotSpring.current.atRest(0.02)) {
-        rafRef.current = requestAnimationFrame(tick)
-      }
-    }
+        const frame = spread.querySelector<HTMLElement>('.wpe-spread__frame')
+        const img = spread.querySelector<HTMLElement>('.wpe-spread__img')
+        const copy = spread.querySelector<HTMLElement>('.wpe-spread__copy')
 
-    const wake = () => {
-      if (!rafRef.current && !disposed) {
-        lastNow = performance.now()
-        rafRef.current = requestAnimationFrame(tick)
-      }
-    }
+        if (frame) {
+          gsap.fromTo(
+            frame,
+            { clipPath: 'inset(10% 0% 10% 0%)', y: 42 },
+            {
+              clipPath: 'inset(0% 0% 0% 0%)',
+              y: -28,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: spread,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: 0.75,
+              },
+            },
+          )
+        }
 
-    const deck = deckRef.current
-    if (!deck) return
+        if (img) {
+          gsap.fromTo(
+            img,
+            { scale: 1.09 },
+            {
+              scale: 1.0,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: spread,
+                start: 'top bottom',
+                end: 'center center',
+                scrub: 0.75,
+              },
+            },
+          )
+        }
 
-    const onDown = (e: PointerEvent) => {
-      if (e.button !== 0 && e.pointerType === 'mouse') return
-      drag.current = { active: true, startX: e.clientX }
-      history.current.reset()
-      history.current.add(e.clientX, e.clientY)
-      deck.setPointerCapture(e.pointerId)
-      wake()
-    }
+        if (copy) {
+          gsap.fromTo(
+            copy,
+            { y: 36 },
+            {
+              y: -36,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: spread,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: 0.65,
+              },
+            },
+          )
+        }
+      })
+    },
+    { scope: rootRef },
+  )
 
-    const onMove = (e: PointerEvent) => {
-      if (!drag.current.active) return
-      const dx = e.clientX - drag.current.startX
-      history.current.add(e.clientX, e.clientY)
-      const res = rubberBand(dx, 140)
-      xSpring.current.setTarget(res)
-      rotSpring.current.setTarget(clamp(res * 0.045, -7, 7))
-      wake()
-    }
+  const jumpToSpread = (idx: number) => {
+    const el = document.getElementById(`wp-spread-${PRINTS[idx].key}`)
+    el?.scrollIntoView({ behavior: 'smooth' })
+  }
 
-    const onUp = (e: PointerEvent) => {
-      if (!drag.current.active) return
-      drag.current.active = false
-      if (deck.hasPointerCapture(e.pointerId)) deck.releasePointerCapture(e.pointerId)
-      const vx = history.current.velocity().x
-      const projected = projectMomentum(xSpring.current.value, vx)
-      history.current.reset()
-
-      if (projected < -95) {
-        setActiveIdx(i => (i + 1) % PRINTS.length)
-        xSpring.current.snap(80)
-        rotSpring.current.snap(3)
-      } else if (projected > 95) {
-        setActiveIdx(i => (i - 1 + PRINTS.length) % PRINTS.length)
-        xSpring.current.snap(-80)
-        rotSpring.current.snap(-3)
-      }
-      xSpring.current.setTarget(0)
-      rotSpring.current.setTarget(0)
-      wake()
-    }
-
-    deck.addEventListener('pointerdown', onDown)
-    deck.addEventListener('pointermove', onMove)
-    deck.addEventListener('pointerup', onUp)
-    deck.addEventListener('pointercancel', onUp)
-    return () => {
-      disposed = true
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-      deck.removeEventListener('pointerdown', onDown)
-      deck.removeEventListener('pointermove', onMove)
-      deck.removeEventListener('pointerup', onUp)
-      deck.removeEventListener('pointercancel', onUp)
-    }
-  }, [])
+  const fullscreenItem = fullscreenIdx !== null ? PRINTS[fullscreenIdx] : null
 
   return (
-    <section className="wpp-page" data-aura={`${active.aura},${active.jelly}`}>
-      <div className="wpp-top">
-        <button type="button" className="wpp-back" onClick={() => onNavigate('home')}>
-          ← BACK TO MOCHI
-        </button>
-        <span className="wpp-eyebrow">PRINT-PROOF DARKROOM — 1290 × 2796 PX</span>
-      </div>
+    <div ref={rootRef} className="wpe-root">
+      {/* Quiet right-edge exhibition index */}
+      <aside className="wpe-rail" aria-label="Jump to wallpaper">
+        {PRINTS.map((p, idx) => (
+          <button
+            key={p.key}
+            type="button"
+            className={`wpe-rail__btn ${idx === activeIdx ? 'is-active' : ''}`}
+            onClick={() => jumpToSpread(idx)}
+            aria-label={`Jump to ${p.name} wallpaper`}
+          >
+            {String(idx + 1).padStart(2, '0')}
+          </button>
+        ))}
+      </aside>
 
-      <div className="wpp-grid">
-        {/* Left: Interactive Phone Print-Proof Stage with Corner Crop Marks & Flick Physics */}
-        <div className="wpp-stage-col">
-          <div ref={deckRef} className="wpp-deck" aria-label="Drag or flick left/right to switch wallpaper prints">
-            <div ref={cardRef} className="wpp-proof-sheet">
-              <span className="wpp-tick wpp-tick--top" aria-hidden="true">
-                1290 PX
+      {/* Monumental Opening Breath */}
+      <section className="wpe-intro section" data-aura="#F2EDE4,#E46A8E">
+        <h1 className="wpe-intro__title">
+          take the colour <em>home.</em>
+        </h1>
+        <p className="wpe-intro__meta">SIX SHADES · 1290 × 2796</p>
+      </section>
+
+      {/* Six Spacious Asymmetric Editorial Print Spreads */}
+      {PRINTS.map((p, idx) => (
+        <section
+          key={p.key}
+          id={`wp-spread-${p.key}`}
+          className={`wpe-spread ${idx % 2 === 1 ? 'wpe-spread--flip' : ''} section`}
+          data-aura={`${p.aura},${p.jelly}`}
+        >
+          <div className="wpe-spread__inner">
+            <button
+              type="button"
+              className="wpe-spread__frame"
+              onClick={() => setFullscreenIdx(idx)}
+              aria-label={`Open fullscreen proof for ${p.label}`}
+            >
+              <img
+                src={p.src}
+                alt={p.alt}
+                width={1290}
+                height={2796}
+                loading={idx < 2 ? 'eager' : 'lazy'}
+                decoding="async"
+                className="wpe-spread__img"
+              />
+            </button>
+
+            <div className="wpe-spread__copy">
+              <span className="wpe-spread__num" aria-hidden="true">
+                {String(idx + 1).padStart(2, '0')}
               </span>
-              <span className="wpp-tick wpp-tick--side" aria-hidden="true">
-                2796 PX
-              </span>
-              <div className="wpp-crop-box">
-                <img
-                  key={active.key}
-                  src={active.src}
-                  alt={active.alt}
-                  width={1290}
-                  height={2796}
-                  decoding="async"
-                  draggable={false}
-                  className="wpp-proof-img"
-                />
+              <h2 className="wpe-spread__name">
+                {p.name.toLowerCase()}. <em>{p.mood}</em>
+              </h2>
+              <p className="wpe-spread__dim">{p.label}</p>
+              <div className="wpe-spread__actions">
+                <a
+                  className="wpe-spread__download"
+                  href={p.src}
+                  download={`mochi-${p.key}-1290x2796.png`}
+                >
+                  ↓ DOWNLOAD 1290 × 2796
+                </a>
+                <button
+                  type="button"
+                  className="wpe-spread__fullscreen"
+                  onClick={() => setFullscreenIdx(idx)}
+                >
+                  FULLSCREEN ↗
+                </button>
               </div>
             </div>
           </div>
+        </section>
+      ))}
 
-          <div className="wpp-deck-controls">
-            <button
-              type="button"
-              className="wpp-step"
-              onClick={() => setActiveIdx(i => (i - 1 + PRINTS.length) % PRINTS.length)}
-            >
-              ← PREV
-            </button>
-            <span className="wpp-counter">
-              {String(activeIdx + 1).padStart(2, '0')} / 06 — FLICK OR DRAG PRINT
-            </span>
-            <button
-              type="button"
-              className="wpp-step"
-              onClick={() => setActiveIdx(i => (i + 1) % PRINTS.length)}
-            >
-              NEXT →
-            </button>
-          </div>
-        </div>
-
-        {/* Right: Contact-Sheet Selector & Direct Downloads */}
-        <div className="wpp-info-col">
-          <h1 className="wpp-heading">
-            take the colour <em>home.</em>
-          </h1>
-          <p className="wpp-sub">
-            six full-resolution phone wallpapers, colour-matched to every drop 01 shade. zero compression, true 1290 × 2796 ratio.
-          </p>
-
-          <div className="wpp-thumbs" role="tablist" aria-label="Wallpaper shades">
-            {PRINTS.map((p, idx) => (
-              <button
-                key={p.key}
-                type="button"
-                role="tab"
-                aria-selected={idx === activeIdx}
-                className={`wpp-thumb ${idx === activeIdx ? 'is-active' : ''}`}
-                onClick={() => setActiveIdx(idx)}
-              >
-                <img src={p.src} alt={p.alt} width={1290} height={2796} loading="lazy" decoding="async" />
-                <span>{p.name}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="wpp-download-row">
-            <span className="wpp-active-label">{active.label}</span>
-            <div className="wpp-cta-group">
-              <a
-                className="wpp-download-btn"
-                href={active.src}
-                download={`mochi-${active.key}-1290x2796.png`}
-              >
-                ↓ DOWNLOAD 1290 × 2796
-              </a>
-              <button type="button" className="wpp-fullscreen-btn" onClick={() => setFullscreen(true)}>
-                FULLSCREEN PROOF ↗
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="wpp-bottom">
-        <button type="button" className="wpp-crosslink" onClick={() => onNavigate('flavours')}>
-          EXPLORE FLAVOUR ATELIER →
+      {/* Spacious Closing Breath */}
+      <section className="wpe-outro section" data-aura="#F2EDE4,#2FA4A8">
+        <p className="wpe-outro__eyebrow">CONTINUE</p>
+        <button type="button" className="wpe-outro__link" onClick={() => onNavigate('flavours')}>
+          explore six <em>moods.</em>
         </button>
-        <button type="button" className="wpp-crosslink" onClick={() => onNavigate('bag')}>
-          OPEN YOUR BAG →
-        </button>
-      </div>
+        <div className="wpe-outro__sublinks">
+          <button type="button" onClick={() => onNavigate('bag')}>
+            OPEN BAG →
+          </button>
+          <button type="button" onClick={() => onNavigate('home')}>
+            BACK TO MOCHI
+          </button>
+        </div>
+      </section>
 
-      {fullscreen &&
+      {fullscreenItem &&
         createPortal(
-          <div className="wp-proof" role="dialog" aria-modal="true" aria-label={active.label} onClick={() => setFullscreen(false)}>
+          <div
+            className="wp-proof"
+            role="dialog"
+            aria-modal="true"
+            aria-label={fullscreenItem.label}
+            onClick={() => setFullscreenIdx(null)}
+          >
             <div className="wp-proof__bar" onClick={e => e.stopPropagation()}>
-              <span className="wp-proof__label">{active.label}</span>
-              <button type="button" className="wp-proof__close" onClick={() => setFullscreen(false)}>
+              <span className="wp-proof__label">{fullscreenItem.label}</span>
+              <button type="button" className="wp-proof__close" onClick={() => setFullscreenIdx(null)}>
                 CLOSE
               </button>
             </div>
@@ -259,7 +248,7 @@ export default function WallpapersPage({
               className="wp-proof__arrow wp-proof__arrow--prev"
               onClick={e => {
                 e.stopPropagation()
-                setActiveIdx(i => (i - 1 + PRINTS.length) % PRINTS.length)
+                setFullscreenIdx(i => (i === null ? 0 : (i - 1 + PRINTS.length) % PRINTS.length))
               }}
               aria-label="Previous wallpaper"
             >
@@ -267,9 +256,19 @@ export default function WallpapersPage({
             </button>
             <div className="wp-proof__stage" onClick={e => e.stopPropagation()}>
               <div className="wp-proof__frame">
-                <img src={active.src} alt={active.alt} width={1290} height={2796} className="wp-proof__img" />
+                <img
+                  src={fullscreenItem.src}
+                  alt={fullscreenItem.alt}
+                  width={1290}
+                  height={2796}
+                  className="wp-proof__img"
+                />
               </div>
-              <a className="wp-proof__download" href={active.src} download={`mochi-${active.key}-1290x2796.png`}>
+              <a
+                className="wp-proof__download"
+                href={fullscreenItem.src}
+                download={`mochi-${fullscreenItem.key}-1290x2796.png`}
+              >
                 ↓ DOWNLOAD 1290 × 2796
               </a>
             </div>
@@ -278,7 +277,7 @@ export default function WallpapersPage({
               className="wp-proof__arrow wp-proof__arrow--next"
               onClick={e => {
                 e.stopPropagation()
-                setActiveIdx(i => (i + 1) % PRINTS.length)
+                setFullscreenIdx(i => (i === null ? 0 : (i + 1) % PRINTS.length))
               }}
               aria-label="Next wallpaper"
             >
@@ -287,6 +286,6 @@ export default function WallpapersPage({
           </div>,
           document.body,
         )}
-    </section>
+    </div>
   )
 }

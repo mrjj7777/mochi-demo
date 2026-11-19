@@ -810,9 +810,9 @@ function App() {
     }
   }, [route])
 
-  // Smooth Lenis scroll on Home (and clean natural scrolling on subpages)
+  // Smooth Lenis scroll across Home AND dedicated Flavours / Wallpapers / Bag pages
   useEffect(() => {
-    if (reduced || route !== 'home') return
+    if (reduced) return
     const lenis = new Lenis({
       duration: 1.15,
       smoothWheel: true,
