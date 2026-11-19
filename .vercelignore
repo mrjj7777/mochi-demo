@@ -1,7 +1,6 @@
 .venv-assets
 _qa
 qa
-docs
 scripts
 node_modules
 dist
