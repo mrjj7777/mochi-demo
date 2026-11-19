@@ -172,9 +172,11 @@ function Header({
 function Flavours({
   onAddFlavour,
   onOpenFlavoursPage,
+  onScrollToY,
 }: {
   onAddFlavour: (item: Flavour) => void
   onOpenFlavoursPage: () => void
+  onScrollToY: (y: number) => void
 }) {
   const { flavour, setFlavour } = useFlavour()
   const [index, setIndex] = useState(0)
@@ -296,7 +298,7 @@ function Flavours({
     const st = triggerRef.current
     if (st) {
       const targetY = st.start + (dotIndex / Math.max(1, flavours.length - 1)) * (st.end - st.start)
-      window.scrollTo({ top: targetY, behavior: 'smooth' })
+      onScrollToY(targetY)
     } else if (sectionRef.current && window.matchMedia('(max-width: 767px)').matches) {
       sectionRef.current.scrollTo({ left: dotIndex * window.innerWidth, behavior: 'smooth' })
     }
@@ -772,12 +774,15 @@ function App() {
     document.documentElement.style.setProperty('--aura', flavour.aura)
   }, [flavour])
 
-  // Sync browser back/forward hash changes
+  // Sync browser back/forward hash changes cleanly with Lenis + ScrollTrigger
   useEffect(() => {
     const onHash = () => {
       const next = readHashRoute()
-      setRoute(next)
+      ScrollTrigger.getAll().forEach(st => st.kill())
+      lenisRef.current?.scrollTo(0, { immediate: true })
       window.scrollTo(0, 0)
+      setRoute(next)
+      setNavLight(false)
     }
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
@@ -798,6 +803,7 @@ function App() {
 
       const targetHash = next === 'home' ? '#/' : `#/${next}`
       if (reduced) {
+        ScrollTrigger.getAll().forEach(st => st.kill())
         setRoute(next)
         window.history.pushState(null, '', targetHash)
         window.scrollTo(0, 0)
@@ -809,17 +815,19 @@ function App() {
 
       const t1 = window.setTimeout(() => {
         ScrollTrigger.getAll().forEach(st => st.kill())
+        lenisRef.current?.scrollTo(0, { immediate: true })
+        window.scrollTo(0, 0)
         setRoute(next)
         window.history.pushState(null, '', targetHash)
-        window.scrollTo(0, 0)
         setNavLight(false)
         setCurtainPhase('out')
       }, 270)
 
       const t2 = window.setTimeout(() => {
         setCurtainPhase('idle')
+        lenisRef.current?.resize()
         ScrollTrigger.refresh()
-      }, 610)
+      }, 630)
 
       transitionTimers.current = [t1, t2]
     },
@@ -861,22 +869,49 @@ function App() {
   useEffect(() => {
     if (reduced) return
     const lenis = new Lenis({
-      duration: 1.15,
+      duration: 1.12,
       smoothWheel: true,
       syncTouch: false,
-      wheelMultiplier: 0.9,
+      wheelMultiplier: 0.92,
+      autoResize: true,
     })
     lenisRef.current = lenis
     const update = (time: number) => lenis.raf(time * 1000)
     gsap.ticker.add(update)
     gsap.ticker.lagSmoothing(0)
     lenis.on('scroll', ScrollTrigger.update)
+
+    const onResize = () => {
+      lenis.resize()
+      ScrollTrigger.refresh()
+    }
+    window.addEventListener('resize', onResize, { passive: true })
+
+    // Ensure ScrollTrigger syncs cleanly after DOM settles for the newly mounted route
+    const refreshTimer = window.setTimeout(() => {
+      lenis.resize()
+      ScrollTrigger.refresh()
+    }, 240)
+
     return () => {
+      window.clearTimeout(refreshTimer)
+      window.removeEventListener('resize', onResize)
       gsap.ticker.remove(update)
       lenis.destroy()
       lenisRef.current = null
     }
   }, [reduced, route])
+
+  const scrollToY = useCallback(
+    (y: number) => {
+      if (lenisRef.current && !reduced) {
+        lenisRef.current.scrollTo(y, { duration: 1.0 })
+      } else {
+        window.scrollTo({ top: y, behavior: reduced ? 'auto' : 'smooth' })
+      }
+    },
+    [reduced],
+  )
 
   useEffect(() => {
     if (loaded) {
@@ -921,6 +956,7 @@ function App() {
               <Flavours
                 onAddFlavour={addFlavourToBag}
                 onOpenFlavoursPage={() => navigate('flavours')}
+                onScrollToY={scrollToY}
               />
               <SoftTicker onOpenBag={() => navigate('bag', { applySoft10: true })} />
               <Texture />

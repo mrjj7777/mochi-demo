@@ -1695,19 +1695,25 @@ html { scrollbar-color: var(--jelly) var(--cream); scrollbar-width: thin; }
 @media (max-width: 767px) {
   .site-nav {
     top: 16px;
-    left: 20px;
-    right: 20px;
+    left: 16px;
+    right: 16px;
   }
 
   .nav-brand,
   .nav-links,
   .nav-links button,
-  .bag {
-    font-size: 12px !important;
+  .bag,
+  .sound-toggle {
+    font-size: 11px !important;
+    letter-spacing: 0.06em !important;
   }
 
   .nav-links {
-    gap: 14px;
+    gap: 10px;
+  }
+
+  .sound-toggle > span:last-child {
+    display: none;
   }
 
   .flavour-panel__label,

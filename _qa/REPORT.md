@@ -54,3 +54,16 @@ Executed `09_GALLERY_AND_REVIEW_FIX.md` items `1 → 10` in order, then applied 
 ## Still Open / Blocked Items for JJ
 
 - **Stand Asset (`mochi-blob-stand.webp`)**: Currently the only stand render available in the repo/desktop (`MOCHI_BLOB_STAND.png`) has a studio blue backdrop and less pronounced tube waves compared to the hero wave render. We removed the boxed square using a soft feathered radial dissolve so it integrates smoothly into the cream/blue aura without faking the product shape, **but a dedicated new stand render featuring the exact hero wavy MOCHI tubes on a clean cream or transparent background is recommended** when you generate the next asset pass.
+
+
+## Production Release Sign-Off (`vite preview` Dist Verification)
+
+- **Clean Production Build**: `npm run build` (`tsc -b && vite build`) passes in `5.23s` with **0 TypeScript errors, 0 warnings**, and split cacheable chunks (`vendor-react` `1.44 kB` gz, `vendor-motion` `36.37 kB` gz, `vendor-three` `129.35 kB` gz, app `109.34 kB` gz, CSS `18.86 kB` gz).
+- **LCP & Preload Hygiene**: `index.html` preloads only active `1920×1080` desktop (`poster.webp`) / `9:16` mobile (`poster-mob.webp`) hero posters and the 4 self-hosted brand fonts (`Krona One`, `Geist Variable`, `Geist Mono Variable`, `Instrument Serif`). Unused preloads and dead code (`MochiTube3D.tsx`, `@fontsource/syne`) removed.
+- **Lenis + ScrollTrigger Multi-Page Hardening**: Synchronized `lenis.scrollTo(0, { immediate: true })` + `lenis.resize()` + `ScrollTrigger.refresh()` across route switches, hash navigation, and Flavours shade-tab jumps.
+- **Audio Hygiene**: Luxury Yamaha C5 Salamander Grand Piano engine (`src/audio/luxuryPiano.ts`) suspends cleanly on tab hide (`visibilitychange`) and resumes on return.
+- **Simulated Checkout**: Preserved studio-demo Bag checkout (`SOFT10`, packaging toggle, `RESERVE DROP 01 →` confirmation `#MCH-xxxx`) with zero real payment integration.
+- **Full `vite preview` Audit (Desktop `1440×900` & Mobile `375×812`)**:
+  - `0` console errors, `0` page errors, `0` 4xx/5xx requests, `0` broken images across all 4 routes (`Home`, `#/flavours`, `#/wallpapers`, `#/bag`), `0px` horizontal overflow.
+  - Mobile `375px` nav verified with `58px` clearance between `MOCHI` and nav controls, and clean round-trip `#/bag` → `#/` (`scrollY: 0`, `hasHero: true`).
+  - Ready to deploy `dist/` directly to Netlify, Vercel, Cloudflare Pages, or any static host.

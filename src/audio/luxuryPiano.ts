@@ -209,6 +209,28 @@ class LuxuryPianoEngine {
   private nextLoopStart = 0
   private scheduledUntil = 0
   private listeners = new Set<(playing: boolean) => void>()
+  private visibilityBound = false
+
+  private bindVisibility() {
+    if (this.visibilityBound || typeof document === 'undefined') return
+    this.visibilityBound = true
+    document.addEventListener('visibilitychange', () => {
+      if (!this.ctx || !this.playing) return
+      if (document.visibilityState === 'hidden') {
+        this.ctx.suspend().catch(() => {})
+      } else {
+        this.ctx
+          .resume()
+          .then(() => {
+            if (!this.ctx) return
+            this.scheduledUntil = this.ctx.currentTime
+            this.nextLoopStart = this.ctx.currentTime + 0.1
+            this.scheduleAhead()
+          })
+          .catch(() => {})
+      }
+    })
+  }
 
   subscribe(fn: (playing: boolean) => void) {
     this.listeners.add(fn)
@@ -370,6 +392,7 @@ class LuxuryPianoEngine {
   }
 
   async start() {
+    this.bindVisibility()
     const ctx = this.ensureContext()
     if (ctx.state === 'suspended') {
       await ctx.resume()
