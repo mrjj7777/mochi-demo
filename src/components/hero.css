@@ -17,14 +17,23 @@
   isolation: isolate;
 }
 
-/* Full-colour crisp video — recedes gently in depth as Belief shutter sweeps up from the bottom */
+/* Opening luxury optical pull-back + ARRI-grade glossy studio contrast */
 .mochi-hero__media {
   position: absolute;
-  inset: 0;
+  inset: -2%;
   z-index: 0;
-  transform: scale(calc(1 - var(--hero-exit-fade, 0) * 0.045));
   transform-origin: center center;
   will-change: transform;
+  animation: mochiHeroAperture 1.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes mochiHeroAperture {
+  from {
+    filter: contrast(1.04) saturate(1.04) brightness(0.96) blur(3px);
+  }
+  to {
+    filter: contrast(1.08) saturate(1.1) brightness(0.995) blur(0px);
+  }
 }
 
 .mochi-hero__poster,
@@ -37,36 +46,69 @@
   object-fit: cover;
   object-position: center;
   background: var(--cream, #F2EDE4);
-  filter: none;
 }
 
 .mochi-hero__poster {
   z-index: 0;
+  transform: scale(1.09) translate3d(-0.6%, 0.8%, 0);
 }
 
 .mochi-hero__canvas {
   z-index: 1;
   opacity: 0;
+  transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .mochi-hero__pin.is-ready .mochi-hero__canvas {
   opacity: 1;
 }
 
-/* Subtle dim as the Belief shutter glides up over the hero video */
-.mochi-hero__seam-fade {
+/* 65mm medium-format optical studio vignette + airy editorial edge veil for nav & HUD legibility */
+.mochi-hero__cinema-grade {
   position: absolute;
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  background: rgba(20, 18, 16, 0.16);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(242, 237, 228, 0.34) 0%,
+      rgba(242, 237, 228, 0.02) 15%,
+      rgba(242, 237, 228, 0) 76%,
+      rgba(242, 237, 228, 0.42) 100%
+    ),
+    radial-gradient(
+      ellipse 78% 72% at 50% 50%,
+      rgba(255, 250, 244, 0) 54%,
+      rgba(28, 20, 16, 0.14) 100%
+    );
+}
+
+/* Whisper-fine 35mm film grain: erases video compression swirl so cream reads like Kodak Portra stock */
+.mochi-hero__film-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* Theatre dim as the Belief shutter glides up over the cinema reel */
+.mochi-hero__seam-fade {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: rgba(18, 15, 13, 0.24);
   opacity: var(--hero-exit-fade, 0);
 }
 
 .mochi-hero__headline {
   position: absolute;
-  z-index: 3;
-  top: clamp(78px, 11svh, 116px);
+  z-index: 4;
+  top: clamp(76px, 10.5svh, 114px);
   left: 50%;
   width: min(92vw, 1080px);
   color: var(--ink, #141414);
@@ -74,7 +116,7 @@
   pointer-events: none;
   opacity: var(--hero-headline-progress, 0);
   clip-path: inset(calc((1 - var(--hero-headline-progress, 0)) * 100%) 0 0 0);
-  transform: translate3d(-50%, calc((1 - var(--hero-headline-progress, 0)) * 1.2rem), 0);
+  transform: translate3d(-50%, calc((1 - var(--hero-headline-progress, 0)) * 1.4rem), 0);
   transform-origin: center top;
   will-change: transform, opacity, clip-path;
 }
@@ -82,55 +124,56 @@
 .mochi-hero__headline span,
 .mochi-hero__headline em {
   font-family: var(--display, 'Krona One', sans-serif);
-  font-size: clamp(2.2rem, 5.4vw, 5.8rem);
+  font-size: clamp(2.2rem, 5.2vw, 5.4rem);
   font-weight: 400;
   letter-spacing: -0.04em;
   line-height: 0.96;
 }
 
+/* Solid upright Instrument Serif — zero cursive anywhere on the site */
 .mochi-hero__headline em {
   margin-left: 0.14em;
   font-family: var(--emotion, 'Instrument Serif', Georgia, serif);
-  font-size: clamp(2.6rem, 6.4vw, 6.9rem);
-  font-style: italic;
-  letter-spacing: -0.015em;
+  font-size: clamp(2.7rem, 6.4vw, 6.8rem);
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: -0.02em;
 }
 
 .mochi-hero__mono {
   position: absolute;
-  z-index: 3;
+  z-index: 4;
   left: clamp(20px, 4.5vw, 64px);
-  bottom: max(1.6rem, env(safe-area-inset-bottom));
+  bottom: max(1.65rem, env(safe-area-inset-bottom));
   margin: 0;
   font-family: var(--micro, 'Geist Mono Variable', monospace);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   line-height: 1.2;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ink, #141414);
+  color: rgba(20, 20, 20, 0.82);
   opacity: var(--hero-cue-opacity, 1);
   pointer-events: none;
 }
 
 .mochi-hero__scroll-cue {
   position: absolute;
-  z-index: 3;
+  z-index: 4;
   left: 50%;
-  bottom: max(1.6rem, env(safe-area-inset-bottom));
+  bottom: max(1.55rem, env(safe-area-inset-bottom));
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 10px 0 0;
+  padding: 0;
   border: 0;
-  border-top: 1px solid rgba(20, 20, 20, 0.42);
   background: transparent;
   color: var(--ink, #141414);
   font-family: var(--micro, 'Geist Mono Variable', monospace);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   line-height: 1;
   text-transform: uppercase;
   transform: translateX(-50%);
@@ -138,14 +181,81 @@
   cursor: pointer;
 }
 
+.mochi-hero__scroll-line {
+  display: block;
+  width: 1px;
+  height: 24px;
+  background: rgba(20, 20, 20, 0.45);
+  transform-origin: top center;
+  animation: mochiScrollBreath 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes mochiScrollBreath {
+  0% {
+    transform: scaleY(0.25);
+    opacity: 0.25;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scaleY(0.25);
+    opacity: 0.25;
+  }
+}
+
 .mochi-hero__scroll-cue:focus-visible {
   outline: 2px solid var(--jelly, #B3122E);
   outline-offset: 6px;
 }
 
+/* Right-side live studio timecode & cinema reel hairline */
+.mochi-hero__hud-right {
+  position: absolute;
+  z-index: 4;
+  right: clamp(20px, 4.5vw, 64px);
+  bottom: max(1.65rem, env(safe-area-inset-bottom));
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  pointer-events: none;
+  opacity: var(--hero-cue-opacity, 1);
+}
+
+.mochi-hero__timecode {
+  font-family: var(--micro, 'Geist Mono Variable', monospace);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: rgba(20, 20, 20, 0.72);
+  font-variant-numeric: tabular-nums;
+}
+
+.mochi-hero__reel-track {
+  position: relative;
+  display: block;
+  width: 48px;
+  height: 1px;
+  background: rgba(20, 20, 20, 0.2);
+  overflow: hidden;
+}
+
+.mochi-hero__reel-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--ink, #141414);
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+
 @media (max-width: 767px) {
   .mochi-hero__pin {
     min-height: 100svh;
+  }
+
+  .mochi-hero__poster {
+    transform: scale(1.03);
   }
 
   .mochi-hero__headline {
@@ -165,7 +275,7 @@
     left: 20px;
     right: 20px;
     bottom: max(1.5rem, env(safe-area-inset-bottom));
-    font-size: 12px;
+    font-size: 11px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -173,12 +283,25 @@
 
   .mochi-hero__scroll-cue {
     left: 50%;
-    bottom: max(4rem, calc(env(safe-area-inset-bottom) + 2.6rem));
-    font-size: 12px;
+    bottom: max(4rem, calc(env(safe-area-inset-bottom) + 2.5rem));
+    font-size: 11px;
+  }
+
+  .mochi-hero__hud-right {
+    display: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .mochi-hero__media {
+    animation: none;
+    filter: contrast(1.06) saturate(1.08) brightness(0.995);
+  }
+
+  .mochi-hero__scroll-line {
+    animation: none;
+  }
+
   .mochi-hero__headline {
     opacity: 1;
     clip-path: inset(0);
