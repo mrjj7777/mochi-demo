@@ -165,9 +165,9 @@ export default function BlobjectShowcase({
     const loader = new THREE.TextureLoader()
     const maxAniso = renderer.capabilities.getMaxAnisotropy()
 
-    const cardWidth = 2.35
-    const cardHeight = 2.94
-    const spacing = 2.85
+    const cardWidth = 1.92
+    const cardHeight = 2.4
+    const spacing = 2.46
     const geometry = new THREE.PlaneGeometry(cardWidth, cardHeight, 36, 24)
 
     const meshes = SLIDES.map((slide, idx) => {
@@ -208,7 +208,7 @@ export default function BlobjectShowcase({
       const h = host.clientHeight || window.innerHeight
       renderer.setSize(w, h, false)
       camera.aspect = w / Math.max(1, h)
-      camera.position.z = camera.aspect < 0.78 ? 6.8 : camera.aspect < 1.25 ? 5.85 : 5.05
+      camera.position.z = camera.aspect < 0.78 ? 6.6 : camera.aspect < 1.25 ? 5.95 : 5.45
       camera.updateProjectionMatrix()
     }
     resize()

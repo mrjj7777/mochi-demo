@@ -454,18 +454,89 @@ function Stand() {
 }
 
 function Footer() {
+  const wordRef = useRef<HTMLDivElement>(null)
+  const targetRef = useRef({ x: 50, y: 50, active: false })
+  const currRef = useRef({ x: 50, y: 50, radius: 0 })
+
+  useEffect(() => {
+    const el = wordRef.current
+    if (!el) return
+    let raf = 0
+    let disposed = false
+
+    const tick = () => {
+      if (disposed) return
+      const t = targetRef.current
+      const c = currRef.current
+      c.x += (t.x - c.x) * 0.16
+      c.y += (t.y - c.y) * 0.16
+      const targetR = t.active ? 1 : 0
+      c.radius += (targetR - c.radius) * 0.12
+
+      el.style.setProperty('--fx', `${c.x.toFixed(2)}%`)
+      el.style.setProperty('--fy', `${c.y.toFixed(2)}%`)
+      el.style.setProperty('--fstrength', c.radius.toFixed(4))
+
+      if (t.active || c.radius > 0.005) {
+        raf = requestAnimationFrame(tick)
+      } else {
+        raf = 0
+      }
+    }
+
+    const wake = () => {
+      if (!raf && !disposed) raf = requestAnimationFrame(tick)
+    }
+
+    const onMove = (event: PointerEvent) => {
+      const rect = el.getBoundingClientRect()
+      if (rect.width < 1 || rect.height < 1) return
+      targetRef.current = {
+        x: ((event.clientX - rect.left) / rect.width) * 100,
+        y: ((event.clientY - rect.top) / rect.height) * 100,
+        active: true,
+      }
+      wake()
+    }
+
+    const onLeave = () => {
+      targetRef.current.active = false
+      wake()
+    }
+
+    el.addEventListener('pointermove', onMove, { passive: true })
+    el.addEventListener('pointerenter', onMove)
+    el.addEventListener('pointerleave', onLeave)
+    return () => {
+      disposed = true
+      if (raf) cancelAnimationFrame(raf)
+      el.removeEventListener('pointermove', onMove)
+      el.removeEventListener('pointerenter', onMove)
+      el.removeEventListener('pointerleave', onLeave)
+    }
+  }, [])
+
   return (
     <footer className="footer section" data-aura="#2346B8,#B3122E">
-      <div className="footer__word" aria-label="MOCHI">
-        <span>M</span>
-        <span>O</span>
-        <span>C</span>
-        <span>H</span>
-        <span>I</span>
+      <div className="footer__center">
+        <div ref={wordRef} className="footer__word-wrap" aria-label="MOCHI">
+          <div className="footer__word footer__word--base" aria-hidden="true">
+            <span>M</span>
+            <span>O</span>
+            <span>C</span>
+            <span>H</span>
+            <span>I</span>
+          </div>
+          <div className="footer__word footer__word--colour" aria-hidden="true">
+            <span>M</span>
+            <span>O</span>
+            <span>C</span>
+            <span>H</span>
+            <span>I</span>
+          </div>
+        </div>
+        <p className="footer__signoff">SQUEEZE RESPONSIBLY.</p>
       </div>
-      <p className="footer__signoff">
-        <em>squeeze responsibly.</em>
-      </p>
       <p className="footer__credit">J&amp;J Intelligence</p>
     </footer>
   )
