@@ -3,3 +3,5 @@ dist/
 *.log
 work/
 qa/page@*.webm
+.venv-assets/
+.vercel/
