@@ -1219,8 +1219,18 @@ html { scrollbar-color: var(--jelly) var(--cream); scrollbar-width: thin; }
   }
 
   .flavour-dots {
-    gap: 14px;
-    bottom: 20px;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 11px;
+    max-width: 94vw;
+    bottom: 22px;
+  }
+
+  .flavour-dots button {
+    font-size: 9.5px !important;
+    letter-spacing: 0.08em !important;
+    white-space: nowrap;
   }
 
   .lookbook__pin {
@@ -1732,7 +1742,7 @@ html { scrollbar-color: var(--jelly) var(--cream); scrollbar-width: thin; }
     display: none;
   }
 
-  /* Enable buttery native horizontal swipe + snap across all 6 shades while keeping bottom tabs pinned */
+  /* Compulsory vertical-scroll -> horizontal GSAP track on mobile (zero hidden horizontal overflow) */
   .flavours {
     height: 100svh;
     min-height: 100svh;
@@ -1742,22 +1752,14 @@ html { scrollbar-color: var(--jelly) var(--cream); scrollbar-width: thin; }
   .flavours__scroller {
     width: 100%;
     height: 100svh;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-  }
-
-  .flavours__scroller::-webkit-scrollbar {
-    display: none;
+    overflow: hidden !important;
   }
 
   .flavours__track {
     display: flex;
     width: max-content;
     height: 100svh;
+    will-change: transform;
   }
 
   .flavour-panel__ctas {
@@ -1807,8 +1809,18 @@ html { scrollbar-color: var(--jelly) var(--cream); scrollbar-width: thin; }
   }
 
   .flavour-dots {
-    gap: 14px;
-    bottom: 20px;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 11px;
+    max-width: 94vw;
+    bottom: 22px;
+  }
+
+  .flavour-dots button {
+    font-size: 9.5px !important;
+    letter-spacing: 0.08em !important;
+    white-space: nowrap;
   }
 
   .texture {

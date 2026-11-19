@@ -197,31 +197,33 @@ function Flavours({
       const track = trackRef.current
       if (!section || !track) return
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      const isMobile = window.matchMedia('(max-width: 767px)').matches
-      if (reduced || isMobile) return
+      if (reduced) return
 
+      const isMobile = window.matchMedia('(max-width: 767px)').matches
       const ctx = gsap.context(() => {
         const panels = gsap.utils.toArray<HTMLElement>('.flavour-panel', track)
         const totalMove = () => -(flavours.length - 1) * window.innerWidth
 
-        // Restored smooth 3D depth parallax + crisp snap so every flavour lands dead-center
+        // Compulsory vertical-scroll -> horizontal 6-shade choreography on BOTH Desktop and Mobile
         const horizontal = gsap.to(track, {
           x: totalMove,
           ease: 'none',
           scrollTrigger: {
             trigger: section,
             start: 'top top',
-            end: () => `+=${Math.round(window.innerHeight * 3.8)}`,
-            scrub: 0.85,
+            end: () => `+=${Math.round(window.innerHeight * (isMobile ? 2.85 : 3.8))}`,
+            scrub: isMobile ? 0.45 : 0.85,
             pin: true,
             pinSpacing: true,
             anticipatePin: 1,
-            snap: {
-              snapTo: 1 / (flavours.length - 1),
-              duration: { min: 0.22, max: 0.5 },
-              delay: 0.06,
-              ease: 'power2.out',
-            },
+            snap: isMobile
+              ? undefined
+              : {
+                  snapTo: 1 / (flavours.length - 1),
+                  duration: { min: 0.22, max: 0.5 },
+                  delay: 0.06,
+                  ease: 'power2.out',
+                },
             invalidateOnRefresh: true,
             onUpdate: self => {
               const next = Math.min(flavours.length - 1, Math.round(self.progress * (flavours.length - 1)))
@@ -237,9 +239,9 @@ function Flavours({
           if (word) {
             gsap.fromTo(
               word,
-              { xPercent: -9 },
+              { xPercent: isMobile ? -12 : -9 },
               {
-                xPercent: 9,
+                xPercent: isMobile ? 12 : 9,
                 ease: 'none',
                 scrollTrigger: {
                   trigger: panel,
@@ -254,11 +256,11 @@ function Flavours({
           if (stage) {
             gsap.fromTo(
               stage,
-              { xPercent: 5, rotate: -2.2, scale: 0.94 },
+              { xPercent: isMobile ? 7 : 5, rotate: isMobile ? -3.5 : -2.2, scale: isMobile ? 0.9 : 0.94 },
               {
-                xPercent: -5,
-                rotate: 2.2,
-                scale: 1.03,
+                xPercent: isMobile ? -7 : -5,
+                rotate: isMobile ? 3.5 : 2.2,
+                scale: isMobile ? 1.04 : 1.03,
                 ease: 'none',
                 scrollTrigger: {
                   trigger: panel,
@@ -281,51 +283,6 @@ function Flavours({
     { scope: sectionRef },
   )
 
-  // Mobile (< 768px): 60fps live horizontal swipe parallax (background colour word glides + tube scales & tilts)
-  useEffect(() => {
-    const scroller = scrollerRef.current
-    const track = trackRef.current
-    if (!scroller || !track) return
-    const mq = window.matchMedia('(max-width: 767px)')
-    let rafId = 0
-
-    const updateMobileCarousel = () => {
-      rafId = 0
-      if (!mq.matches) return
-      const vw = Math.max(1, window.innerWidth)
-      const scrollX = scroller.scrollLeft
-      const next = clamp(Math.round(scrollX / vw), 0, flavours.length - 1)
-      setIndex(prev => (prev === next ? prev : next))
-
-      const panels = track.querySelectorAll<HTMLElement>('.flavour-panel')
-      panels.forEach((panel, i) => {
-        const offset = clamp((i * vw - scrollX) / vw, -1.2, 1.2)
-        const abs = Math.abs(offset)
-        const word = panel.querySelector<HTMLElement>('.flavour-panel__name')
-        const tube = panel.querySelector<HTMLElement>('.flavour-tube-wrap')
-        if (word) {
-          word.style.transform = `translate3d(${(offset * 46).toFixed(1)}px, 0, 0) scale(${(1 - abs * 0.08).toFixed(4)})`
-          word.style.opacity = `${clamp(0.92 - abs * 0.45, 0.25, 0.92).toFixed(3)}`
-        }
-        if (tube) {
-          tube.style.transform = `translate3d(${(-offset * 18).toFixed(1)}px, ${(abs * 14).toFixed(1)}px, 0) rotate(${(offset * 6.5).toFixed(2)}deg) scale(${(1 - abs * 0.14).toFixed(4)})`
-        }
-      })
-    }
-
-    const onScroll = () => {
-      if (!mq.matches) return
-      if (!rafId) rafId = requestAnimationFrame(updateMobileCarousel)
-    }
-
-    updateMobileCarousel()
-    scroller.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      scroller.removeEventListener('scroll', onScroll)
-      if (rafId) cancelAnimationFrame(rafId)
-    }
-  }, [])
-
   const selectFlavour = (dotIndex: number, item: Flavour) => {
     setIndex(dotIndex)
     setFlavour(item)
@@ -333,8 +290,6 @@ function Flavours({
     if (st) {
       const targetY = st.start + (dotIndex / Math.max(1, flavours.length - 1)) * (st.end - st.start)
       onScrollToY(targetY)
-    } else if (scrollerRef.current && window.matchMedia('(max-width: 767px)').matches) {
-      scrollerRef.current.scrollTo({ left: dotIndex * window.innerWidth, behavior: 'smooth' })
     }
   }
 

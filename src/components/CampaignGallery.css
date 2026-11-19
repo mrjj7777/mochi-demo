@@ -294,18 +294,18 @@
   right: clamp(12px, 3vw, 40px);
 }
 
-/* Mobile (< 768px): no pin, native horizontal scroll-snap strip, 84vw cards at 4:5 */
+/* Mobile (< 768px): 100svh pinned compulsory vertical-scroll 3D concave panoramic gallery */
 @media (max-width: 767px) {
   .campaign-gallery {
-    height: auto;
-    min-height: 0;
-    padding: 84px 0 64px;
-    gap: 24px;
+    height: 100svh;
+    min-height: 100svh;
+    padding: 64px 0 26px;
+    gap: 12px;
   }
 
   .campaign-gallery__head {
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }
 
   .campaign-gallery__title {
@@ -313,41 +313,61 @@
   }
 
   .campaign-gallery__viewport {
+    position: relative;
+    flex: 1 1 auto;
     width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .campaign-gallery__viewport::-webkit-scrollbar {
-    display: none;
+    min-height: 0;
+    overflow: hidden;
+    perspective: 860px;
+    perspective-origin: 50% 50%;
   }
 
   .campaign-gallery__track {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 3.5vw;
-    padding: 14px 14vw 20px;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
   }
 
   .campaign-strip__item {
-    width: 72vw;
-    scroll-snap-align: center;
-    scroll-snap-stop: always;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 68vw;
+    margin-left: -34vw;
+    margin-top: -42.5vw;
     will-change: transform, opacity;
     transform-origin: center center;
   }
 
   .campaign-strip__img {
-    width: 72vw;
+    width: 68vw;
     height: auto;
   }
 
-  .campaign-gallery__active-caption,
-  .campaign-gallery__inspect {
+  .campaign-strip__caption {
     display: none;
+  }
+
+  .campaign-gallery__footer {
+    gap: 12px;
+  }
+
+  .campaign-gallery__active-caption {
+    min-width: 0;
+    max-width: 44vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11px;
+  }
+
+  .campaign-gallery__counter {
+    font-size: 11px;
+  }
+
+  .campaign-gallery__inspect {
+    display: inline-block;
+    font-size: 11px;
   }
 
   .campaign-lightbox {

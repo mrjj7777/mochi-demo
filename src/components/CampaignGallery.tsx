@@ -565,62 +565,121 @@ export default function CampaignGallery({ reduced = false }: { reduced?: boolean
     }
   }, [isMobile, items, reduced])
 
-  // Mobile (< 768px): 60fps native scroll-snap strip with real-time 3D perspective carousel tilt & depth scale
+  // Mobile (< 768px): Compulsory vertical-scroll pinned 3D concave panoramic gallery (60fps pure GPU, zero WebGL lag)
   useEffect(() => {
     if (!isMobile) return
+    const section = sectionRef.current
     const viewport = viewportRef.current
-    if (!viewport) return
+    if (!section || !viewport) return
 
+    let disposed = false
     let rafId = 0
+    let targetProgress = 0
+    let currentProgress = 0
+    let lastNow = performance.now()
+    const total = Math.max(1, items.length)
+    const maxIdx = Math.max(1, total - 1)
 
-    const updateCards = () => {
-      rafId = 0
-      const vw = Math.max(1, viewport.clientWidth)
-      const maxScroll = Math.max(1, viewport.scrollWidth - vw)
-      const ratio = clamp(viewport.scrollLeft / maxScroll, 0, 1)
-      setProgress(prev => (Math.abs(prev - ratio) < 0.002 ? prev : ratio))
-
-      const viewCenter = viewport.scrollLeft + vw * 0.5
-      let closestIdx = 0
-      let closestDist = Number.POSITIVE_INFINITY
+    const layoutCards = (normP: number) => {
+      const vw = Math.max(1, viewport.clientWidth || window.innerWidth)
+      const stride = vw * 0.72
+      const activeFloat = normP * maxIdx
 
       cardRefs.current.forEach((el, idx) => {
         if (!el) return
-        const center = el.offsetLeft + el.offsetWidth * 0.5
-        const delta = center - viewCenter
-        const absDist = Math.abs(delta)
-        if (absDist < closestDist) {
-          closestDist = absDist
-          closestIdx = idx
-        }
+        const delta = idx - activeFloat
+        const absD = Math.abs(delta)
 
-        // Only animate cards near the viewport for locked 60fps mobile GPU efficiency
-        if (absDist < vw * 1.45) {
-          const norm = clamp(delta / (vw * 0.88), -1.15, 1.15)
-          const absNorm = Math.abs(norm)
-          const rotY = -norm * 14
-          const scale = 1 - absNorm * 0.1
-          const liftY = absNorm * 10
-          const opacity = clamp(1 - absNorm * 0.34, 0.58, 1)
-          el.style.transform = `perspective(920px) translate3d(0, ${liftY.toFixed(1)}px, 0) rotateY(${rotY.toFixed(2)}deg) scale(${scale.toFixed(4)})`
-          el.style.opacity = opacity.toFixed(3)
+        // Cull far off-screen posters so mobile GPU only composites 3-4 visible frames (locked 60fps)
+        if (absD > 2.2) {
+          if (el.style.visibility !== 'hidden') el.style.visibility = 'hidden'
+          return
         }
+        if (el.style.visibility !== 'visible') el.style.visibility = 'visible'
+
+        const clamped = clamp(delta, -1.6, 1.6)
+        // Exact concave panoramic lens geometry matching desktop REEL FLUX:
+        // Outer edges sweep forward toward viewer (left card +rotY, right card -rotY) with crisp centre focus
+        const tx = delta * stride
+        const rotY = -clamped * 22
+        const tz = (1 - Math.cos(clamp(clamped * 0.62, -1.1, 1.1))) * 90
+        const scale = 1 + Math.min(absD, 1.2) * 0.035
+        const opacity = clamp(1 - Math.max(0, absD - 1.25) * 1.1, 0, 1)
+
+        el.style.transform = `translate3d(${tx.toFixed(1)}px, 0, ${tz.toFixed(1)}px) rotateY(${rotY.toFixed(2)}deg) scale(${scale.toFixed(4)})`
+        el.style.opacity = opacity.toFixed(3)
+        el.style.zIndex = String(10 - Math.round(absD * 3))
       })
 
+      const closestIdx = clamp(Math.round(activeFloat), 0, maxIdx)
       setActiveIndex(prev => (prev === closestIdx ? prev : closestIdx))
+      setProgress(prev => (Math.abs(prev - normP) < 0.002 ? prev : normP))
     }
 
-    const onScroll = () => {
-      if (!rafId) rafId = requestAnimationFrame(updateCards)
+    const tick = (now: number) => {
+      rafId = 0
+      if (disposed || document.visibilityState === 'hidden') return
+      const dt = Math.min(0.05, Math.max(0.001, (now - lastNow) / 1000))
+      lastNow = now
+
+      const diff = targetProgress - currentProgress
+      if (reduced || Math.abs(diff) < 0.0004) {
+        currentProgress = targetProgress
+      } else {
+        const alpha = 1 - Math.exp(-14 * dt)
+        currentProgress += diff * alpha
+      }
+
+      layoutCards(currentProgress)
+
+      if (!reduced && Math.abs(targetProgress - currentProgress) >= 0.0004) {
+        rafId = requestAnimationFrame(tick)
+      }
     }
 
-    updateCards()
-    viewport.addEventListener('scroll', onScroll, { passive: true })
+    const wake = () => {
+      if (disposed || document.visibilityState === 'hidden') return
+      if (!rafId) {
+        lastNow = performance.now()
+        rafId = requestAnimationFrame(tick)
+      }
+    }
+
+    layoutCards(0)
+
+    let trigger: ScrollTrigger | null = null
+    if (!reduced) {
+      trigger = ScrollTrigger.create({
+        trigger: section,
+        start: 'top top',
+        end: () => `+=${Math.round(window.innerHeight * 4.2)}`,
+        pin: true,
+        pinSpacing: true,
+        anticipatePin: 1,
+        scrub: true,
+        invalidateOnRefresh: true,
+        onUpdate: self => {
+          targetProgress = clamp(self.progress, 0, 1)
+          wake()
+        },
+      })
+    }
+
+    let lastW = window.innerWidth
+    const onResize = () => {
+      if (Math.abs(window.innerWidth - lastW) < 2) return
+      lastW = window.innerWidth
+      layoutCards(currentProgress)
+    }
+    window.addEventListener('resize', onResize, { passive: true })
+
     return () => {
-      viewport.removeEventListener('scroll', onScroll)
+      disposed = true
+      trigger?.kill()
+      window.removeEventListener('resize', onResize)
       if (rafId) cancelAnimationFrame(rafId)
     }
-  }, [isMobile, items.length])
+  }, [isMobile, items.length, reduced])
 
   const openLightbox = useCallback((idx: number) => {
     setLightboxIndex(idx)
@@ -661,7 +720,7 @@ export default function CampaignGallery({ reduced = false }: { reduced?: boolean
                     alt={item.alt}
                     width={item.w}
                     height={item.h}
-                    loading={idx < 4 ? 'eager' : 'lazy'}
+                    loading={idx <= activeIndex + 4 ? 'eager' : 'lazy'}
                     decoding="async"
                     className="campaign-strip__img"
                   />
@@ -696,7 +755,7 @@ export default function CampaignGallery({ reduced = false }: { reduced?: boolean
                     alt={item.alt}
                     width={item.w}
                     height={item.h}
-                    loading={idx < 4 ? 'eager' : 'lazy'}
+                    loading={idx <= activeIndex + 4 ? 'eager' : 'lazy'}
                     decoding="async"
                     draggable={false}
                     className="campaign-strip__img"
