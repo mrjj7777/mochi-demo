@@ -18,29 +18,25 @@ export type GalleryItem = {
 }
 
 /**
- * 18 100%-unique visuals merged into ONE unified 3D Spiral Flux cylinder:
- * 5 editorial creator portraits + 7 MOCHI campaign posters + 6 downloadable wallpapers.
- * Zero image repetition anywhere on the entire page.
+ * 14 100%-unique, balanced full-spectrum visuals in ONE unified 3D Spiral Flux cylinder:
+ * all 6 multi-colour MOCHI wallpapers (teal, sky blue, rose, amber, forest green, cobalt)
+ * interleaved with rich studio & street campaign visuals (zero pink overload, zero repeats).
  */
 const ARCHIVE_ITEMS: GalleryItem[] = [
-  { id: 'a01', src: '/media/campaigns/pink-noise.webp', downloadSrc: '/media/campaigns/pink-noise.webp', alt: 'MOCHI Pink Noise cover', title: 'PINK NOISE', aspect: 0.8 },
-  { id: 'a02', src: '/media/photos/mochi-model-1.webp', downloadSrc: '/media/photos/mochi-model-1.webp', alt: 'MOCHI creator portrait 01', title: 'CHERRY LOOK', aspect: 0.78 },
-  { id: 'a03', src: `/media/wallpapers/mochi-${flavours[0].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[0].asset}-${wallpaperFileSize}.png`, alt: 'CHERRY MOCHI wallpaper', title: 'CHERRY', aspect: 0.56 },
-  { id: 'a04', src: '/media/campaigns/gloss-gang.webp', downloadSrc: '/media/campaigns/gloss-gang.webp', alt: 'MOCHI Gloss Gang editorial', title: 'GLOSS GANG', aspect: 0.8 },
-  { id: 'a05', src: '/media/photos/mochi-model-2.webp', downloadSrc: '/media/photos/mochi-model-2.webp', alt: 'MOCHI creator portrait 02', title: 'MINT LOOK', aspect: 0.78 },
-  { id: 'a06', src: `/media/wallpapers/mochi-${flavours[1].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[1].asset}-${wallpaperFileSize}.png`, alt: 'PEACH MOCHI wallpaper', title: 'PEACH', aspect: 0.56 },
-  { id: 'a07', src: '/media/campaigns/pout-jaipur.webp', downloadSrc: '/media/campaigns/pout-jaipur.webp', alt: 'MOCHI Pout Jaipur campaign', title: 'POUT', aspect: 0.8 },
-  { id: 'a08', src: '/media/photos/mochi-model-3.webp', downloadSrc: '/media/photos/mochi-model-3.webp', alt: 'MOCHI creator portrait 03', title: 'GRAPE LOOK', aspect: 0.78 },
-  { id: 'a09', src: `/media/wallpapers/mochi-${flavours[2].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[2].asset}-${wallpaperFileSize}.png`, alt: 'LYCHEE MOCHI wallpaper', title: 'LYCHEE', aspect: 0.56 },
-  { id: 'a10', src: '/media/campaigns/one-of-48.webp', downloadSrc: '/media/campaigns/one-of-48.webp', alt: 'MOCHI 1 of 48 poster', title: '1 OF 48', aspect: 0.8 },
-  { id: 'a11', src: '/media/photos/mochi-model-4.webp', downloadSrc: '/media/photos/mochi-model-4.webp', alt: 'MOCHI creator portrait 04', title: 'LYCHEE LOOK', aspect: 0.78 },
-  { id: 'a12', src: `/media/wallpapers/mochi-${flavours[3].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[3].asset}-${wallpaperFileSize}.png`, alt: 'GRAPE MOCHI wallpaper', title: 'GRAPE', aspect: 0.56 },
-  { id: 'a13', src: '/media/campaigns/hold-this.webp', downloadSrc: '/media/campaigns/hold-this.webp', alt: 'MOCHI Hold This campaign', title: 'HOLD THIS', aspect: 0.8 },
-  { id: 'a14', src: '/media/photos/mochi-model-5.webp', downloadSrc: '/media/photos/mochi-model-5.webp', alt: 'MOCHI creator portrait 05', title: 'MANGO LOOK', aspect: 0.78 },
-  { id: 'a15', src: `/media/wallpapers/mochi-${flavours[4].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[4].asset}-${wallpaperFileSize}.png`, alt: 'MINT MOCHI wallpaper', title: 'MINT', aspect: 0.56 },
-  { id: 'a16', src: '/media/campaigns/squish-club.webp', downloadSrc: '/media/campaigns/squish-club.webp', alt: 'MOCHI Squish Club zine', title: 'SQUISH CLUB', aspect: 0.8 },
-  { id: 'a17', src: '/media/campaigns/boys-pout.webp', downloadSrc: '/media/campaigns/boys-pout.webp', alt: 'MOCHI Boys Pout Too campaign', title: 'BOYS POUT TOO', aspect: 0.8 },
-  { id: 'a18', src: `/media/wallpapers/mochi-${flavours[5].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[5].asset}-${wallpaperFileSize}.png`, alt: 'MANGO MOCHI wallpaper', title: 'MANGO', aspect: 0.56 },
+  { id: 'a01', src: `/media/wallpapers/mochi-${flavours[0].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[0].asset}-${wallpaperFileSize}.png`, alt: 'CHERRY MOCHI wallpaper', title: 'CHERRY', aspect: 0.56 },
+  { id: 'a02', src: '/media/campaigns/gloss-gang.webp', downloadSrc: '/media/campaigns/gloss-gang.webp', alt: 'MOCHI Gloss Gang editorial', title: 'GLOSS GANG', aspect: 0.8 },
+  { id: 'a03', src: `/media/wallpapers/mochi-${flavours[4].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[4].asset}-${wallpaperFileSize}.png`, alt: 'MINT MOCHI wallpaper', title: 'MINT', aspect: 0.56 },
+  { id: 'a04', src: '/media/campaigns/prism-shadow.webp', downloadSrc: '/media/campaigns/prism-shadow.webp', alt: 'MOCHI chromatic prism shadow', title: 'PRISM', aspect: 0.8 },
+  { id: 'a05', src: `/media/wallpapers/mochi-${flavours[5].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[5].asset}-${wallpaperFileSize}.png`, alt: 'MANGO MOCHI wallpaper', title: 'MANGO', aspect: 0.56 },
+  { id: 'a06', src: '/media/photos/mochi-model-4.webp', downloadSrc: '/media/photos/mochi-model-4.webp', alt: 'MOCHI editorial portrait', title: 'EDITORIAL', aspect: 0.78 },
+  { id: 'a07', src: `/media/wallpapers/mochi-${flavours[1].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[1].asset}-${wallpaperFileSize}.png`, alt: 'PEACH MOCHI wallpaper', title: 'PEACH', aspect: 0.56 },
+  { id: 'a08', src: '/media/campaigns/hand-squeeze.webp', downloadSrc: '/media/campaigns/hand-squeeze.webp', alt: 'MOCHI hand squeeze study', title: 'SQUEEZE', aspect: 0.8 },
+  { id: 'a09', src: `/media/wallpapers/mochi-${flavours[3].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[3].asset}-${wallpaperFileSize}.png`, alt: 'GRAPE MOCHI wallpaper', title: 'GRAPE', aspect: 0.56 },
+  { id: 'a10', src: '/media/photos/mochi-all-row.webp', downloadSrc: '/media/photos/mochi-all-row.webp', alt: 'All six MOCHI shades in a row', title: 'LINEUP', aspect: 0.85 },
+  { id: 'a11', src: '/media/campaigns/pink-noise.webp', downloadSrc: '/media/campaigns/pink-noise.webp', alt: 'MOCHI Pink Noise cover', title: 'PINK NOISE', aspect: 0.8 },
+  { id: 'a12', src: `/media/wallpapers/mochi-${flavours[2].asset}-${wallpaperFileSize}.png`, downloadSrc: `/media/wallpapers/mochi-${flavours[2].asset}-${wallpaperFileSize}.png`, alt: 'LYCHEE MOCHI wallpaper', title: 'LYCHEE', aspect: 0.56 },
+  { id: 'a13', src: '/media/campaigns/hold-this.webp', downloadSrc: '/media/campaigns/hold-this.webp', alt: 'MOCHI Hold This editorial', title: 'HOLD THIS', aspect: 0.8 },
+  { id: 'a14', src: '/media/campaigns/squish-claw.webp', downloadSrc: '/media/campaigns/squish-claw.webp', alt: 'MOCHI silicone press study', title: 'SQUISH', aspect: 0.8 },
 ]
 
 /**
@@ -376,7 +372,7 @@ export default function CampaignLoopGallery({
         entry.pivot.rotation.y = angle
         entry.pivot.scale.set(radiusScale, 1 + entry.hover * 0.05, radiusScale)
 
-        const edgeFade = absU > 6.4 ? Math.max(0, 1 - (absU - 6.4) / 2.0) : 1
+        const edgeFade = absU > 5.0 ? Math.max(0, 1 - (absU - 5.0) / 1.8) : 1
         const frontFactor = 0.5 + 0.5 * Math.cos(angle)
         const opacity = edgeFade * (0.44 + 0.56 * frontFactor)
 

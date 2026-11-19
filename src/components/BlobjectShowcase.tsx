@@ -10,52 +10,44 @@ gsap.registerPlugin(ScrollTrigger, useGSAP)
 type FormSlide = {
   num: string
   title: string
-  wingTint: string
-  archTint: string
   image: string
   alt: string
 }
 
+/**
+ * 5 balanced full-spectrum MOCHI visuals (teal/cherry, all-six jewel pile, fresh mint, deep grape, sunny mango).
+ * Zero glassmorphism overlays — pure 3D concave optical-illusion carousel driven cleanly by scroll & mouse.
+ */
 const SLIDES: FormSlide[] = [
   {
     num: '01',
-    title: 'form.',
-    wingTint: 'rgba(246, 211, 214, 0.54)',
-    archTint: 'rgba(244, 198, 206, 0.42)',
-    image: '/media/campaigns/blobject-form.webp',
-    alt: 'MOCHI sculptural form study',
+    title: 'CHERRY',
+    image: '/media/photos/mochi-model-1.webp',
+    alt: 'MOCHI Cherry editorial portrait',
   },
   {
     num: '02',
-    title: 'prism.',
-    wingTint: 'rgba(143, 195, 230, 0.44)',
-    archTint: 'rgba(246, 211, 214, 0.36)',
-    image: '/media/campaigns/prism-shadow.webp',
-    alt: 'MOCHI chromatic prism shadow',
+    title: 'ALL SIX',
+    image: '/media/photos/mochi-all-pile.webp',
+    alt: 'All six MOCHI lip jelly shades',
   },
   {
     num: '03',
-    title: 'press.',
-    wingTint: 'rgba(244, 162, 126, 0.46)',
-    archTint: 'rgba(242, 182, 50, 0.28)',
-    image: '/media/campaigns/squish-claw.webp',
-    alt: 'MOCHI tactile press study',
+    title: 'MINT',
+    image: '/media/photos/mochi-model-2.webp',
+    alt: 'MOCHI Mint editorial portrait',
   },
   {
     num: '04',
-    title: 'satin.',
-    wingTint: 'rgba(218, 196, 238, 0.46)',
-    archTint: 'rgba(246, 211, 214, 0.4)',
-    image: '/media/campaigns/satin-gloss.webp',
-    alt: 'MOCHI satin gloss study',
+    title: 'GRAPE',
+    image: '/media/photos/mochi-model-3.webp',
+    alt: 'MOCHI Grape editorial portrait',
   },
   {
     num: '05',
-    title: 'slab.',
-    wingTint: 'rgba(143, 217, 182, 0.4)',
-    archTint: 'rgba(143, 195, 230, 0.32)',
-    image: '/media/campaigns/blobject-slab.webp',
-    alt: 'MOCHI sculpted silicone pedestal',
+    title: 'MANGO',
+    image: '/media/photos/mochi-model-5.webp',
+    alt: 'MOCHI Mango editorial portrait',
   },
 ]
 
@@ -71,23 +63,23 @@ const VERTEX_SHADER = `
     vUv = uv;
     vec3 pos = position;
 
-    // World horizontal position of this vertex relative to screen center
+    // World horizontal position relative to screen center
     float worldX = pos.x + uOffset;
-
-    // True 3D concave optical barrel curve: edges bend forward/back into curved glass space
     float distSq = worldX * worldX;
+
+    // True 3D concave optical barrel curve across the open screen
     pos.z -= distSq * uCurve;
 
-    // Physical elastic shear + convex bow driven by real horizontal scroll/drag velocity
-    float bend = sin(uv.y * 3.14159265) * uVelocity * 0.24;
+    // Elastic shear & bow driven smoothly by live scroll/drag velocity
+    float bend = sin(uv.y * 3.14159265) * uVelocity * 0.22;
     pos.x -= bend;
     pos.z += sin(uv.x * 3.14159265) * uHover * 0.16;
 
-    // Subtle concave optical vertical pinch toward outer wings (Reference Image 2 lens illusion)
-    float edgePinch = 1.0 - min(0.24, distSq * 0.022);
+    // Optical concave lens pinch toward outer horizontal edges
+    float edgePinch = 1.0 - min(0.22, distSq * 0.02);
     pos.y *= edgePinch;
 
-    vDepthShade = clamp(1.0 - distSq * 0.048, 0.42, 1.0);
+    vDepthShade = clamp(1.0 - distSq * 0.042, 0.48, 1.0);
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
   }
@@ -102,15 +94,14 @@ const FRAGMENT_SHADER = `
   varying float vDepthShade;
 
   void main() {
-    // Subtle chromatic refraction at fast velocity / edge curvature
     vec4 tex = texture2D(uTexture, vUv);
-    vec3 col = tex.rgb * (0.86 + 0.14 * vDepthShade);
+    vec3 col = tex.rgb * (0.88 + 0.12 * vDepthShade);
 
-    // Glossy optical glass specular reflection gliding with mouse pointer
+    // Subtle specular sheen gliding with mouse pointer
     vec2 glossCenter = vec2(0.5 + uPointer.x * 0.35, 0.5 - uPointer.y * 0.35);
     float d = distance(vUv, glossCenter);
-    float sheen = smoothstep(0.55, 0.0, d) * (0.06 + uHover * 0.12);
-    col += vec3(1.0, 0.98, 0.96) * sheen;
+    float sheen = smoothstep(0.55, 0.0, d) * (0.045 + uHover * 0.11);
+    col += vec3(1.0, 0.99, 0.97) * sheen;
 
     gl_FragColor = vec4(col, tex.a * uAlpha);
   }
@@ -131,7 +122,6 @@ export default function BlobjectShowcase({
   const [activeIndex, setActiveIndex] = useState(0)
   const activeIndexRef = useRef(0)
 
-  // Real physical horizontal spring state shared between ScrollTrigger & Mouse Drag
   const physRef = useRef({
     pos: 0,
     target: 0,
@@ -170,22 +160,17 @@ export default function BlobjectShowcase({
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 50)
-    camera.position.set(0, 0, 5.4)
+    camera.position.set(0, 0, 5.2)
 
     const loader = new THREE.TextureLoader()
     const maxAniso = renderer.capabilities.getMaxAnisotropy()
 
-    const cardWidth = 2.25
-    const cardHeight = 2.82
-    const spacing = 2.75
+    const cardWidth = 2.35
+    const cardHeight = 2.94
+    const spacing = 2.85
     const geometry = new THREE.PlaneGeometry(cardWidth, cardHeight, 36, 24)
 
-    const meshes: Array<{
-      mesh: THREE.Mesh
-      material: THREE.ShaderMaterial
-      hover: number
-      index: number
-    }> = SLIDES.map((slide, idx) => {
+    const meshes = SLIDES.map((slide, idx) => {
       const texture = loader.load(slide.image)
       texture.colorSpace = THREE.SRGBColorSpace
       texture.anisotropy = Math.min(8, maxAniso)
@@ -200,7 +185,7 @@ export default function BlobjectShowcase({
           uTexture: { value: texture },
           uVelocity: { value: 0 },
           uOffset: { value: idx * spacing },
-          uCurve: { value: 0.175 },
+          uCurve: { value: 0.165 },
           uHover: { value: 0 },
           uAlpha: { value: 1 },
           uPointer: { value: new THREE.Vector2(0, 0) },
@@ -223,7 +208,7 @@ export default function BlobjectShowcase({
       const h = host.clientHeight || window.innerHeight
       renderer.setSize(w, h, false)
       camera.aspect = w / Math.max(1, h)
-      camera.position.z = camera.aspect < 0.8 ? 7.1 : camera.aspect < 1.32 ? 6.15 : 5.25
+      camera.position.z = camera.aspect < 0.78 ? 6.8 : camera.aspect < 1.25 ? 5.85 : 5.05
       camera.updateProjectionMatrix()
     }
     resize()
@@ -278,7 +263,6 @@ export default function BlobjectShowcase({
     const onPointerUp = () => {
       if (!physRef.current.dragging) return
       physRef.current.dragging = false
-      // Magnetic snap to nearest slide after drag flick
       const projected = physRef.current.pos + physRef.current.vel * 0.14
       const snapped = Math.max(0, Math.min(SLIDES.length - 1, Math.round(projected)))
       physRef.current.dragOffset = snapped - physRef.current.scrollPos
@@ -324,7 +308,6 @@ export default function BlobjectShowcase({
         st.pos = st.target
         st.vel = 0
       } else {
-        // Critically-damped heavy physical slide spring
         const stiffness = st.dragging ? 260 : 120
         const damping = st.dragging ? 28 : 19
         const force = (st.target - st.pos) * stiffness
@@ -333,28 +316,19 @@ export default function BlobjectShowcase({
         st.pos += st.vel * dt
       }
 
-      // Smooth 3D mouse camera parallax
       st.smoothPX += (st.pointerX - st.smoothPX) * (1 - Math.exp(-7 * dt))
       st.smoothPY += (st.pointerY - st.smoothPY) * (1 - Math.exp(-7 * dt))
 
-      camera.position.x = st.smoothPX * 0.42
-      camera.position.y = st.smoothPY * 0.24
+      camera.position.x = st.smoothPX * 0.44
+      camera.position.y = st.smoothPY * 0.26
       camera.lookAt(0, 0, 0)
 
-      // Mirror smooth mouse tilt onto CSS curved optical arches & side wings
-      stage.style.setProperty('--bx', `${(50 + st.smoothPX * 26).toFixed(2)}%`)
-      stage.style.setProperty('--by', `${(50 - st.smoothPY * 22).toFixed(2)}%`)
-      stage.style.setProperty('--btilt-x', `${(st.smoothPX * 16).toFixed(2)}px`)
-      stage.style.setProperty('--btilt-y', `${(-st.smoothPY * 12).toFixed(2)}px`)
-
-      // Sync active slide index cleanly
       const nearest = Math.max(0, Math.min(SLIDES.length - 1, Math.round(st.pos)))
       if (nearest !== activeIndexRef.current) {
         activeIndexRef.current = nearest
         setActiveIndex(nearest)
       }
 
-      // Raycast hover in 3D space
       raycaster.setFromCamera(pointerNdc, camera)
       const hits = raycaster.intersectObjects(meshes.map(m => m.mesh), false)
       hoveredIdx = hits.length > 0 ? (hits[0].object.userData.index as number) : -1
@@ -370,9 +344,8 @@ export default function BlobjectShowcase({
         const targetHover = hoveredIdx === i ? 1 : 0
         item.hover += (targetHover - item.hover) * (1 - Math.exp(-9 * dt))
 
-        // Place each card along the concave optical-illusion horizontal arc
         item.mesh.position.x = worldX
-        item.mesh.position.y = Math.sin(rel * 0.6) * 0.04 + item.hover * 0.06
+        item.mesh.position.y = Math.sin(rel * 0.55) * 0.04 + item.hover * 0.06
         item.mesh.position.z = -Math.abs(rel) * 0.34 + item.hover * 0.22
         item.mesh.rotation.y = -rel * 0.36 + st.smoothPX * 0.08
         item.mesh.rotation.x = -st.smoothPY * 0.06
@@ -382,7 +355,7 @@ export default function BlobjectShowcase({
         item.material.uniforms.uVelocity.value = clampedVel
         item.material.uniforms.uOffset.value = worldX
         item.material.uniforms.uHover.value = item.hover
-        item.material.uniforms.uAlpha.value = Math.max(0.18, 1 - Math.max(0, Math.abs(rel) - 0.85) * 0.55)
+        item.material.uniforms.uAlpha.value = Math.max(0.24, 1 - Math.max(0, Math.abs(rel) - 0.9) * 0.52)
         item.material.uniforms.uPointer.value.set(st.smoothPX, st.smoothPY)
       }
 
@@ -431,7 +404,6 @@ export default function BlobjectShowcase({
           const scrollSlide = self.progress * (SLIDES.length - 1)
           physRef.current.scrollPos = scrollSlide
           if (!physRef.current.dragging) {
-            // Smoothly decay any previous manual drag offset back into natural scroll flow
             physRef.current.dragOffset *= 0.92
             physRef.current.target = Math.max(0, Math.min(SLIDES.length - 1, scrollSlide + physRef.current.dragOffset))
           }
@@ -445,8 +417,6 @@ export default function BlobjectShowcase({
     },
     { scope: sectionRef, dependencies: [reduced] },
   )
-
-  const slide = SLIDES[activeIndex]
 
   const jumpToSlide = (idx: number) => {
     const clamped = Math.max(0, Math.min(SLIDES.length - 1, idx))
@@ -462,53 +432,13 @@ export default function BlobjectShowcase({
   }
 
   return (
-    <section
-      id="blobject"
-      ref={sectionRef}
-      className="blobject section"
-      data-aura="#F6D3D6,#8FC3E6"
-      style={
-        {
-          '--wing-tint': slide.wingTint,
-          '--arch-tint': slide.archTint,
-        } as React.CSSProperties
-      }
-    >
+    <section id="blobject" ref={sectionRef} className="blobject section" data-aura="#2FA4A8,#F2EDE4">
       <div ref={stageRef} className="blobject__stage">
-        {/* True 3D Concave Optical-Illusion WebGL Carousel Canvas */}
-        <div ref={canvasHostRef} className="blobject__canvas-host" aria-label="3D curved form gallery" />
+        {/* Pure, unobstructed Three.js 3D Concave Optical-Illusion Carousel */}
+        <div ref={canvasHostRef} className="blobject__canvas-host" aria-label="3D curved editorial showcase" />
 
-        {/* Sculpted Concave Optical Lens Top & Bottom Arches (Reference Image 2 Illusion) */}
-        <div className="blobject__arch blobject__arch--top" aria-hidden="true" />
-        <div className="blobject__arch blobject__arch--bottom" aria-hidden="true" />
-
-        {/* Left & Right Curved Optical Wings Flanking the 3D Stage */}
-        <button
-          type="button"
-          className="blobject__wing blobject__wing--left"
-          onClick={() => jumpToSlide((activeIndex + SLIDES.length - 1) % SLIDES.length)}
-          aria-label="Previous study"
-        >
-          <span className="blobject__sheen" aria-hidden="true" />
-          <span key={`num-${slide.num}`} className="blobject__number">
-            {slide.num}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          className="blobject__wing blobject__wing--right"
-          onClick={() => jumpToSlide((activeIndex + 1) % SLIDES.length)}
-          aria-label="Next study"
-        >
-          <span className="blobject__sheen" aria-hidden="true" />
-          <span key={`title-${slide.num}`} className="blobject__title">
-            <em>{slide.title}</em>
-          </span>
-        </button>
-
-        {/* Minimal Chapter Indicator */}
-        <div className="blobject__nav" role="tablist" aria-label="Form studies">
+        {/* Minimal Quiet Index Dots */}
+        <div className="blobject__nav" role="tablist" aria-label="Editorial studies">
           {SLIDES.map((item, idx) => (
             <button
               type="button"
