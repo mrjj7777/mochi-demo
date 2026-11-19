@@ -117,14 +117,15 @@ export default function Hero({ onJump }: HeroProps) {
       const img = findNearest(frameIdx)
       if (!img?.naturalWidth) return
 
-      // Architectural 65mm crop: overscan 1.10x centered cleanly on the 6 tubes
-      // Eliminates raw left-edge banding and bottom-right corner watermark on every viewport ratio.
-      const overscan = isMobile ? 1.04 : 1.1
+      // Adaptive 65mm cinema crop: eliminates left-edge artifact & bottom-right watermark
+      // while keeping all 6 tubes cleanly framed across both 16:9 widescreen and narrower desktop panes.
+      const aspect = cachedW / Math.max(1, cachedH)
+      const overscan = isMobile ? 1.04 : aspect < 1.48 ? 1.03 : 1.07
       const baseScale = Math.max(cachedW / img.naturalWidth, cachedH / img.naturalHeight) * overscan
       const drawW = img.naturalWidth * baseScale
       const drawH = img.naturalHeight * baseScale
-      const offsetX = isMobile ? 0 : -cachedW * 0.008
-      const offsetY = isMobile ? 0 : cachedH * 0.01
+      const offsetX = isMobile ? 0 : -cachedW * 0.005
+      const offsetY = isMobile ? 0 : cachedH * 0.012
       const drawX = (cachedW - drawW) * 0.5 + offsetX
       const drawY = (cachedH - drawH) * 0.5 + offsetY
 
